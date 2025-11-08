@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер Пифагора</title>
+    <style>
+        /* Стили остаются без изменений */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: #1f2937;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #4f46e5;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .study-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .study-controls.hidden {
+            display: none;
+        }
+
+        button {
+            background-color: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #475569;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #e2e8f0;
+        }
+
+        button.active {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        .timer-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            justify-content: center;
+        }
+
+        .timer-section.hidden {
+            display: none;
+        }
+
+        .timer {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4f46e5;
+            min-width: 120px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-btn {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+        }
+
+        .timer-btn:hover {
+            background-color: #059669;
+        }
+
+        .timer-btn.stop {
+            background-color: #ef4444;
+        }
+
+        .timer-btn.stop:hover {
+            background-color: #dc2626;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .stats.hidden {
+            display: none;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .input-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: #f8fafc;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        #question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4f46e5;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .current-input {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #4f46e5;
+            min-width: 60px;
+            text-align: center;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 25px;
+        }
+
+        .pythagoras-table {
+            border-collapse: collapse;
+            margin: 0 auto;
+            table-layout: fixed;
+        }
+
+        .pythagoras-table td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .pythagoras-table td.header {
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 700;
+        }
+
+        .pythagoras-table td.cell {
+            background-color: white;
+        }
+
+        .pythagoras-table td.cell:hover {
+            background-color: #e0e7ff;
+        }
+
+        .pythagoras-table td.active {
+            border: 3px solid #4f46e5;
+            box-shadow: 0 0 0 2px #c7d2fe;
+        }
+
+        .pythagoras-table td.input-active {
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+        }
+
+        .pythagoras-table td.highlight-row {
+            background-color: #dbeafe;
+        }
+
+        .pythagoras-table td.highlight-col {
+            background-color: #dbeafe;
+        }
+
+        .pythagoras-table td.user-input {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .pythagoras-table td.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .pythagoras-table td.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .pythagoras-table td.revealed {
+            background-color: #f0f9ff;
+            color: #0369a1;
+        }
+
+        .progress-container {
+            margin-top: 25px;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background-color: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #10b981;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .instructions {
+            background-color: #f0f9ff;
+            border-left: 4px solid #4f46e5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 25px;
+        }
+
+        .instructions h3 {
+            color: #4f46e5;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            margin-bottom: 8px;
+        }
+
+        .key-hint {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .key {
+            background-color: #e2e8f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .mode-selector, .study-controls {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .input-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            #question-text {
+                min-width: auto;
+            }
+            
+            .pythagoras-table td {
+                width: 40px;
+                height: 40px;
+                font-size: 0.9rem;
+            }
+            
+            .timer-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .pythagoras-table td {
+                width: 35px;
+                height: 35px;
+                font-size: 0.8rem;
+            }
+            
+            .input-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Тренажер Пифагора</h1>
+            <p class="subtitle">Изучайте таблицу умножения с помощью таблицы Пифагора</p>
+        </header>
+        
+        <div class="controls">
+            <div class="mode-selector">
+                <button id="study-mode" class="active">Режим изучения</button>
+                <button id="practice-mode">Режим тренировки</button>
+            </div>
+            <div class="study-controls" id="study-controls">
+                <button id="hide-table">Скрыть таблицу</button>
+                <button id="show-table">Показать таблицу</button>
+            </div>
+        </div>
+        
+        <div class="timer-section hidden" id="timer-section">
+            <div class="timer" id="timer">00:00</div>
+            <button class="timer-btn stop" id="reset-timer">Сбросить таймер</button>
+        </div>
+        
+        <div class="stats hidden" id="stats-section">
+            <div class="stat-item">
+                <div class="stat-value" id="correct-count">0</div>
+                <div class="stat-label">Правильно</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="incorrect-count">0</div>
+                <div class="stat-label">Ошибок</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="progress-percent">0%</div>
+                <div class="stat-label">Прогресс</div>
+            </div>
+        </div>
+        
+        <div class="input-container" id="input-area">
+            <div id="question-text">Изучайте таблицу умножения. Нажмите на ячейку, чтобы увидеть ответ</div>
+            <div class="current-input" id="current-input">?</div>
+        </div>
+        
+        <div class="table-container">
+            <table class="pythagoras-table" id="multiplication-table" tabindex="0">
+                <!-- Таблица будет сгенерирована JavaScript -->
+            </table>
+        </div>
+        
+        <div class="key-hint">
+            <div class="key">← → ↑ ↓</div>
+            <div class="key">Навигация по таблице</div>
+            <div class="key">0-9</div>
+            <div class="key">Ввод ответа</div>
+            <div class="key">Enter</div>
+            <div class="key">Подтвердить</div>
+            <div class="key">Backspace</div>
+            <div class="key">Удалить</div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Как пользоваться тренажером:</h3>
+            <p><strong>Режим изучения:</strong> Изучайте таблицу умножения. Используйте кнопки "Скрыть таблицу" и "Показать таблицу" для управления отображением.</p>
+            <p><strong>Режим тренировки:</strong> Вводите цифры - они сразу отображаются в ячейке. Зеленый цвет - правильный ответ, красный - ошибка.</p>
+            <p>Можно исправлять неправильные ответы, просто введя новое число поверх старого.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Элементы DOM
+            const table = document.getElementById('multiplication-table');
+            const studyModeBtn = document.getElementById('study-mode');
+            const practiceModeBtn = document.getElementById('practice-mode');
+            const correctCountEl = document.getElementById('correct-count');
+            const incorrectCountEl = document.getElementById('incorrect-count');
+            const progressPercentEl = document.getElementById('progress-percent');
+            const progressFillEl = document.getElementById('progress-fill');
+            const inputArea = document.getElementById('input-area');
+            const questionText = document.getElementById('question-text');
+            const currentInputEl = document.getElementById('current-input');
+            const timerEl = document.getElementById('timer');
+            const resetTimerBtn = document.getElementById('reset-timer');
+            const timerSection = document.getElementById('timer-section');
+            const statsSection = document.getElementById('stats-section');
+            const studyControls = document.getElementById('study-controls');
+            const hideTableBtn = document.getElementById('hide-table');
+            const showTableBtn = document.getElementById('show-table');
+            
+            // Переменные состояния
+            let currentMode = 'study';
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let totalCells = 0;
+            let completedCells = 0;
+            let currentCell = null;
+            let activeCell = null;
+            let currentRow = 1;
+            let currentCol = 1;
+            let userInput = '';
+            let inputTimeout = null;
+            let isTableHidden = false; // Состояние таблицы в режиме изучения
+            
+            // Таймер
+            let timerInterval = null;
+            let timerSeconds = 0;
+            let isTimerRunning = false;
+            
+            // Функция для обновления видимости элементов
+            function updateVisibility() {
+                if (currentMode === 'study') {
+                    timerSection.classList.add('hidden');
+                    statsSection.classList.add('hidden');
+                    studyControls.classList.remove('hidden');
+                } else {
+                    timerSection.classList.remove('hidden');
+                    statsSection.classList.remove('hidden');
+                    studyControls.classList.add('hidden');
+                }
+            }
+            
+            // Функция для скрытия/показа таблицы в режиме изучения
+            function updateTableVisibility() {
+                const cells = table.querySelectorAll('.cell');
+                cells.forEach(cell => {
+                    if (isTableHidden) {
+                        // Скрываем таблицу - очищаем ВСЕ ячейки
+                        cell.textContent = '';
+                        cell.classList.remove('revealed');
+                        cell.dataset.revealed = 'false';
+                    } else {
+                        // Показываем всю таблицу
+                        cell.textContent = cell.dataset.value;
+                        cell.classList.add('revealed');
+                        cell.dataset.revealed = 'true';
+                    }
+                });
+                updateQuestionText();
+            }
+            
+            // Функция для открытия ячейки в режиме изучения
+            function revealCell() {
+                if (currentMode === 'study' && isTableHidden && activeCell) {
+                    const row = parseInt(activeCell.dataset.row);
+                    const col = parseInt(activeCell.dataset.col);
+                    activeCell.textContent = row * col;
+                    activeCell.classList.add('revealed');
+                    activeCell.dataset.revealed = 'true';
+                }
+            }
+            
+            // Функция для установки активной ячейки
+            function setActiveCell(row, col) {
+                currentRow = row;
+                currentCol = col;
+                userInput = '';
+                updateActiveCell();
+                updateQuestionText();
+                updateCurrentInput();
+            }
+            
+            // Инициализация таблицы
+            function initTable() {
+                table.innerHTML = '';
+                totalCells = 0;
+                completedCells = 0;
+                currentRow = 1;
+                currentCol = 1;
+                userInput = '';
+                updateCurrentInput();
+                
+                // Создание заголовков
+                const headerRow = document.createElement('tr');
+                const emptyHeader = document.createElement('td');
+                emptyHeader.className = 'header';
+                emptyHeader.textContent = '×';
+                headerRow.appendChild(emptyHeader);
+                
+                for (let i = 1; i <= 10; i++) {
+                    const headerCell = document.createElement('td');
+                    headerCell.className = 'header';
+                    headerCell.textContent = i;
+                    headerRow.appendChild(headerCell);
+                }
+                
+                table.appendChild(headerRow);
+                
+                // Создание строк таблицы
+                for (let i = 1; i <= 10; i++) {
+                    const row = document.createElement('tr');
+                    
+                    // Заголовок строки
+                    const rowHeader = document.createElement('td');
+                    rowHeader.className = 'header';
+                    rowHeader.textContent = i;
+                    row.appendChild(rowHeader);
+                    
+                    // Ячейки с произведениями
+                    for (let j = 1; j <= 10; j++) {
+                        const cell = document.createElement('td');
+                        cell.className = 'cell';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        cell.dataset.value = i * j;
+                        cell.dataset.answered = 'false';
+                        cell.dataset.userAnswer = '';
+                        cell.dataset.revealed = 'true'; // По умолчанию все ячейки открыты
+                        
+                        if (currentMode === 'study') {
+                            // В режиме изучения показываем всю таблицу
+                            cell.textContent = i * j;
+                            cell.classList.add('revealed');
+                        } else {
+                            // Режим тренировки - скрываем все ответы
+                            cell.textContent = '';
+                            cell.dataset.revealed = 'false';
+                        }
+                        
+                        cell.addEventListener('click', handleCellClick);
+                        cell.addEventListener('mouseenter', handleCellHover);
+                        cell.addEventListener('mouseleave', handleCellHoverOut);
+                        
+                        row.appendChild(cell);
+                        totalCells++;
+                    }
+                    
+                    table.appendChild(row);
+                }
+                
+                // Устанавливаем фокус на таблицу для работы клавиатуры
+                table.focus();
+                updateActiveCell();
+                updateProgress();
+                updateQuestionText();
+                updateVisibility(); // Обновляем видимость элементов
+            }
+            
+            // Обновление активной ячейки
+            function updateActiveCell() {
+                // Убираем активный класс со всех ячеек
+                const allCells = table.querySelectorAll('.cell');
+                allCells.forEach(cell => {
+                    cell.classList.remove('active');
+                    cell.classList.remove('input-active');
+                });
+                
+                // Находим и выделяем активную ячейку
+                activeCell = table.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
+                if (activeCell) {
+                    if (userInput && currentMode === 'practice') {
+                        activeCell.classList.add('input-active');
+                    } else {
+                        activeCell.classList.add('active');
+                    }
+                    highlightRowAndColumn(currentRow, currentCol);
+                }
+            }
+            
+            // Обновление текста вопроса
+            function updateQuestionText() {
+                if (currentMode === 'study') {
+                    if (isTableHidden) {
+                        questionText.textContent = 'Нажмите на ячейку, чтобы увидеть ответ';
+                    } else {
+                        questionText.textContent = 'Изучайте таблицу умножения';
+                    }
+                } else {
+                    questionText.textContent = `Сколько будет ${currentRow} × ${currentCol}?`;
+                }
+            }
+            
+            // Обновление текущего ввода
+            function updateCurrentInput() {
+                if (userInput) {
+                    currentInputEl.textContent = userInput;
+                    currentInputEl.style.borderColor = '#f59e0b';
+                } else {
+                    currentInputEl.textContent = '?';
+                    currentInputEl.style.borderColor = '#e2e8f0';
+                }
+            }
+            
+            // Обработчик клика по ячейке
+            function handleCellClick(event) {
+                const cell = event.target;
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                
+                // Устанавливаем активную ячейку
+                setActiveCell(row, col);
+                
+                // В режиме изучения при скрытой таблице - открываем ячейку
+                if (currentMode === 'study' && isTableHidden) {
+                    cell.textContent = row * col;
+                    cell.classList.add('revealed');
+                    cell.dataset.revealed = 'true';
+                    return;
+                }
+                
+                // В режиме тренировки проверяем предыдущий ввод перед сменой ячейки
+                if (currentMode === 'practice' && userInput && (row !== currentRow || col !== currentCol)) {
+                    checkAnswer();
+                }
+            }
+            
+            // Обработчик наведения на ячейку
+            function handleCellHover(event) {
+                const cell = event.target;
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                
+                highlightRowAndColumn(row, col);
+            }
+            
+            // Обработчик ухода мыши с ячейки
+            function handleCellHoverOut() {
+                if (!activeCell) {
+                    removeHighlights();
+                }
+            }
+            
+            // Подсветка строки и столбца
+            function highlightRowAndColumn(row, col) {
+                removeHighlights();
+                
+                // Подсветка строки
+                const rows = table.querySelectorAll('tr');
+                for (let i = 1; i < rows.length; i++) {
+                    const cells = rows[i].querySelectorAll('td');
+                    if (cells[col]) {
+                        cells[col].classList.add('highlight-row');
+                    }
+                }
+                
+                // Подсветка столбца
+                for (let i = 1; i <= 10; i++) {
+                    const cell = table.querySelector(`td[data-row="${row}"][data-col="${i}"]`);
+                    if (cell) cell.classList.add('highlight-col');
+                }
+            }
+            
+            // Удаление подсветки
+            function removeHighlights() {
+                const highlightedCells = table.querySelectorAll('.highlight-row, .highlight-col');
+                highlightedCells.forEach(cell => {
+                    cell.classList.remove('highlight-row');
+                    cell.classList.remove('highlight-col');
+                });
+            }
+            
+            // Обработка нажатий клавиш
+            function handleKeyDown(event) {
+                // Обработка Enter для открытия ячеек в режиме изучения
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    if (currentMode === 'study' && isTableHidden) {
+                        revealCell();
+                        return;
+                    }
+                }
+                
+                if (currentMode === 'practice') {
+                    // Обработка цифрового ввода
+                    if (event.key >= '0' && event.key <= '9') {
+                        event.preventDefault();
+                        
+                        // Запускаем таймер при первом вводе
+                        if (!isTimerRunning && userInput === '') {
+                            startTimer();
+                        }
+                        
+                        userInput += event.key;
+                        if (userInput.length > 2) {
+                            userInput = userInput.slice(0, 2);
+                        }
+                        
+                        // Сохраняем ввод пользователя в данные ячейки
+                        if (activeCell) {
+                            activeCell.dataset.userAnswer = userInput;
+                            activeCell.textContent = userInput;
+                            activeCell.classList.add('user-input');
+                        }
+                        
+                        updateCurrentInput();
+                        updateActiveCell();
+                        
+                        // Сбрасываем предыдущий таймаут
+                        if (inputTimeout) {
+                            clearTimeout(inputTimeout);
+                        }
+                        
+                        // Устанавливаем таймаут для автоматической проверки
+                        inputTimeout = setTimeout(() => {
+                            if (userInput) {
+                                checkAnswer();
+                            }
+                        }, 2000);
+                        
+                        return;
+                    }
+                    
+                    // Обработка Backspace
+                    if (event.key === 'Backspace') {
+                        event.preventDefault();
+                        userInput = userInput.slice(0, -1);
+                        if (activeCell) {
+                            activeCell.dataset.userAnswer = userInput;
+                            activeCell.textContent = userInput || '';
+                            if (!userInput) {
+                                activeCell.classList.remove('user-input');
+                            }
+                        }
+                        updateCurrentInput();
+                        updateActiveCell();
+                        return;
+                    }
+                }
+                
+                // Обработка навигации
+                switch(event.key) {
+                    case 'ArrowUp':
+                        event.preventDefault();
+                        if (currentMode === 'practice' && userInput) {
+                            checkAnswer();
+                        }
+                        if (currentRow > 1) {
+                            setActiveCell(currentRow - 1, currentCol);
+                        }
+                        break;
+                    case 'ArrowDown':
+                        event.preventDefault();
+                        if (currentMode === 'practice' && userInput) {
+                            checkAnswer();
+                        }
+                        if (currentRow < 10) {
+                            setActiveCell(currentRow + 1, currentCol);
+                        }
+                        break;
+                    case 'ArrowLeft':
+                        event.preventDefault();
+                        if (currentMode === 'practice' && userInput) {
+                            checkAnswer();
+                        }
+                        if (currentCol > 1) {
+                            setActiveCell(currentRow, currentCol - 1);
+                        }
+                        break;
+                    case 'ArrowRight':
+                        event.preventDefault();
+                        if (currentMode === 'practice' && userInput) {
+                            checkAnswer();
+                        }
+                        if (currentCol < 10) {
+                            setActiveCell(currentRow, currentCol + 1);
+                        }
+                        break;
+                }
+            }
+            
+            // Проверка ответа
+            function checkAnswer() {
+                if (!userInput || !activeCell) return;
+                
+                // Сбрасываем таймаут
+                if (inputTimeout) {
+                    clearTimeout(inputTimeout);
+                    inputTimeout = null;
+                }
+                
+                const correctAnswer = parseInt(activeCell.dataset.value);
+                const userAnswer = parseInt(userInput);
+                
+                // Проверяем ответ
+                if (userAnswer === correctAnswer) {
+                    // Правильный ответ
+                    activeCell.classList.remove('user-input', 'incorrect');
+                    activeCell.classList.add('correct');
+                    activeCell.dataset.answered = 'true';
+                    
+                    // Обновляем счетчики только если это новый правильный ответ
+                    if (!activeCell.classList.contains('correct-old')) {
+                        correctCount++;
+                        completedCells++;
+                        activeCell.classList.add('correct-old');
+                    }
+                    
+                    correctCountEl.textContent = correctCount;
+                } else {
+                    // Неправильный ответ
+                    activeCell.classList.remove('user-input', 'correct');
+                    activeCell.classList.add('incorrect');
+                    activeCell.dataset.answered = 'true';
+                    
+                    // Обновляем счетчики только если это новая ошибка
+                    if (!activeCell.classList.contains('incorrect-old')) {
+                        incorrectCount++;
+                        activeCell.classList.add('incorrect-old');
+                    }
+                    
+                    incorrectCountEl.textContent = incorrectCount;
+                }
+                
+                userInput = '';
+                updateCurrentInput();
+                updateProgress();
+                
+                // Проверяем, заполнена ли вся таблица
+                if (completedCells === totalCells) {
+                    stopTimer();
+                }
+            }
+            
+            // Таймер
+            function startTimer() {
+                if (isTimerRunning) return;
+                
+                isTimerRunning = true;
+                timerInterval = setInterval(() => {
+                    timerSeconds++;
+                    updateTimerDisplay();
+                }, 1000);
+            }
+            
+            function stopTimer() {
+                isTimerRunning = false;
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }
+            
+            function resetTimer() {
+                stopTimer();
+                timerSeconds = 0;
+                updateTimerDisplay();
+                
+                // Сбрасываем прогресс
+                correctCount = 0;
+                incorrectCount = 0;
+                completedCells = 0;
+                correctCountEl.textContent = '0';
+                incorrectCountEl.textContent = '0';
+                updateProgress();
+                
+                // Сбрасываем таблицу
+                const cells = table.querySelectorAll('.cell');
+                cells.forEach(cell => {
+                    cell.textContent = '';
+                    cell.classList.remove('correct', 'incorrect', 'user-input', 'correct-old', 'incorrect-old');
+                    cell.dataset.answered = 'false';
+                    cell.dataset.userAnswer = '';
+                });
+                
+                userInput = '';
+                updateCurrentInput();
+            }
+            
+            function updateTimerDisplay() {
+                const minutes = Math.floor(timerSeconds / 60);
+                const seconds = timerSeconds % 60;
+                timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Обновление прогресса
+            function updateProgress() {
+                const progress = Math.round((completedCells / totalCells) * 100);
+                progressPercentEl.textContent = `${progress}%`;
+                progressFillEl.style.width = `${progress}%`;
+            }
+            
+            // Обработчики событий
+            studyModeBtn.addEventListener('click', function() {
+                currentMode = 'study';
+                studyModeBtn.classList.add('active');
+                practiceModeBtn.classList.remove('active');
+                userInput = '';
+                updateCurrentInput();
+                updateQuestionText();
+                isTableHidden = false; // Сбрасываем состояние скрытия таблицы
+                initTable();
+            });
+            
+            practiceModeBtn.addEventListener('click', function() {
+                currentMode = 'practice';
+                practiceModeBtn.classList.add('active');
+                studyModeBtn.classList.remove('active');
+                userInput = '';
+                updateCurrentInput();
+                updateQuestionText();
+                initTable();
+            });
+            
+            hideTableBtn.addEventListener('click', function() {
+                isTableHidden = true;
+                updateTableVisibility();
+            });
+            
+            showTableBtn.addEventListener('click', function() {
+                isTableHidden = false;
+                updateTableVisibility();
+            });
+            
+            resetTimerBtn.addEventListener('click', resetTimer);
+            
+            table.addEventListener('keydown', handleKeyDown);
+            
+            // Инициализация при загрузке
+            initTable();
+        });
+    </script>
+</body>
+</html>
