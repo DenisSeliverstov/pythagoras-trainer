@@ -221,6 +221,10 @@
             border: 2px solid #d4b896;
         }
 
+        .challenge-container.hidden {
+            display: none;
+        }
+
         .table-container {
             overflow-x: auto;
             margin-bottom: 25px;
@@ -242,6 +246,10 @@
             box-shadow: 0 4px 16px rgba(93, 64, 55, 0.15);
             border-radius: 12px;
             overflow: hidden;
+        }
+
+        .pythagoras-table.hidden {
+            display: none;
         }
 
         .pythagoras-table td {
@@ -324,6 +332,7 @@
             border-radius: 6px;
             overflow: hidden;
             border: 1px solid #d4b896;
+            margin-bottom: 10px;
         }
 
         .progress-fill {
@@ -374,6 +383,10 @@
             border: 1px solid #c4a77d;
         }
 
+        .instructions.hidden {
+            display: none;
+        }
+
         .instructions h3 {
             color: #5d4037;
             margin-bottom: 10px;
@@ -390,6 +403,11 @@
             gap: 10px;
             margin-top: 10px;
             flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .key-hint.hidden {
+            display: none;
         }
 
         .key {
@@ -400,6 +418,57 @@
             font-weight: 600;
             color: #5d4037;
             border: 1px solid #d4b896;
+        }
+
+        /* Стили для режима Вызов */
+        .challenge-difficulty {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .challenge-difficulty.hidden {
+            display: none;
+        }
+
+        .challenge-question {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #5d4037;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .challenge-input {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 15px;
+            border: 3px solid #8d6e63;
+            border-radius: 10px;
+            width: 150px;
+            margin: 0 auto;
+            display: block;
+            background-color: #faf6f0;
+            color: #5d4037;
+        }
+
+        .challenge-timer {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #bf7b6e;
+            text-align: center;
+            margin: 15px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .challenge-progress {
+            font-size: 1.2rem;
+            color: #6d4c41;
+            text-align: center;
+            margin: 10px 0;
         }
 
         /* Мобильная версия */
@@ -453,6 +522,19 @@
             .difficulty-selector {
                 justify-content: center;
             }
+            
+            .challenge-question {
+                font-size: 2rem;
+            }
+            
+            .challenge-input {
+                font-size: 1.5rem;
+                width: 120px;
+            }
+            
+            .challenge-timer {
+                font-size: 1.5rem;
+            }
         }
 
         @media (max-width: 480px) {
@@ -482,6 +564,15 @@
                 padding: 3px 6px;
                 font-size: 0.8rem;
             }
+            
+            .challenge-question {
+                font-size: 1.8rem;
+            }
+            
+            .challenge-input {
+                font-size: 1.3rem;
+                width: 100px;
+            }
         }
 
         /* Скрытое поле ввода для мобильных устройств */
@@ -507,6 +598,7 @@
             <div class="mode-selector">
                 <button id="study-mode" class="active">Режим изучения</button>
                 <button id="practice-mode">Режим тренировки</button>
+                <button id="challenge-mode">Вызов</button>
             </div>  
         </div>
         
@@ -524,10 +616,20 @@
                 <div class="stat-label">Прогресс</div>
             </div>
         </div>
+
+        <!-- Контейнер для выбора сложности в режиме Вызов -->
+        <div class="challenge-difficulty hidden" id="challenge-difficulty">
+            <button id="challenge-easy" class="active">Легкая (10 примеров)</button>
+            <button id="challenge-medium">Средняя (30 примеров)</button>
+            <button id="challenge-hard">Сложная (100 примеров)</button>
+        </div>
         
-        <div class="input-container" id="input-area">
-            <div id="question-text">Изучайте таблицу умножения. Нажмите на ячейку, чтобы увидеть ответ</div>
-            <div class="current-input" id="current-input">?</div>
+        <!-- Контейнер для самого вызова -->
+        <div class="challenge-container hidden" id="challenge-container">
+            <div class="challenge-progress" id="challenge-progress">Пример 1 из 10</div>
+            <div class="challenge-question" id="challenge-question">5 × 3 = ?</div>
+            <input type="text" class="challenge-input" id="challenge-input" maxlength="3">
+            <div class="challenge-timer hidden" id="challenge-timer">5</div>
         </div>
         
         <div id="completion-message" class="completion-message hidden">
@@ -554,8 +656,14 @@
                 <!-- Таблица будет сгенерирована JavaScript -->
             </table>
         </div>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
         
-        <div class="key-hint">
+        <div class="key-hint hidden" id="key-hint">
             <div class="key">← → ↑ ↓</div>
             <div class="key">Навигация по таблице</div>
             <div class="key">0-9</div>
@@ -566,16 +674,16 @@
             <div class="key">Удалить</div>
         </div>
         
-        <div class="progress-container">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill"></div>
-            </div>
+        <div class="input-container" id="input-area">
+            <div id="question-text">Изучайте таблицу умножения. Нажмите на ячейку, чтобы увидеть ответ</div>
+            <div class="current-input" id="current-input">?</div>
         </div>
         
-        <div class="instructions">
+        <div class="instructions" id="instructions">
             <h3>Как пользоваться тренажером:</h3>
             <p><strong>Режим изучения:</strong> Изучайте таблицу умножения. Используйте кнопки "Скрыть таблицу" и "Показать таблицу" для управления отображением.</p>
             <p><strong>Режим тренировки:</strong> Выберите уровень сложности и заполните пропущенные ячейки. Легкий - 2/3 заполнено, Средний - 1/3 заполнено, Сложный - пустая таблица.</p>
+            <p><strong>Режим вызова:</strong> Проверьте свою скорость и точность! Решайте примеры на время с разными уровнями сложности.</p>
         </div>
     </div>
 
@@ -585,6 +693,7 @@
             const table = document.getElementById('multiplication-table');
             const studyModeBtn = document.getElementById('study-mode');
             const practiceModeBtn = document.getElementById('practice-mode');
+            const challengeModeBtn = document.getElementById('challenge-mode');
             const difficultyEasyBtn = document.getElementById('difficulty-easy');
             const difficultyMediumBtn = document.getElementById('difficulty-medium');
             const difficultyHardBtn = document.getElementById('difficulty-hard');
@@ -604,6 +713,19 @@
             const hideTableBtn = document.getElementById('hide-table');
             const showTableBtn = document.getElementById('show-table');
             const completionMessage = document.getElementById('completion-message');
+            const keyHint = document.getElementById('key-hint');
+            const instructions = document.getElementById('instructions');
+            
+            // Элементы для режима Вызов
+            const challengeDifficulty = document.getElementById('challenge-difficulty');
+            const challengeEasyBtn = document.getElementById('challenge-easy');
+            const challengeMediumBtn = document.getElementById('challenge-medium');
+            const challengeHardBtn = document.getElementById('challenge-hard');
+            const challengeContainer = document.getElementById('challenge-container');
+            const challengeQuestion = document.getElementById('challenge-question');
+            const challengeInput = document.getElementById('challenge-input');
+            const challengeTimer = document.getElementById('challenge-timer');
+            const challengeProgress = document.getElementById('challenge-progress');
             
             // Переменные состояния
             let currentMode = 'study';
@@ -627,6 +749,15 @@
             let timerSeconds = 0;
             let isTimerRunning = false;
 
+            // Переменные для режима Вызов
+            let challengeExamples = [];
+            let currentExampleIndex = 0;
+            let challengeTimerInterval = null;
+            let challengeTimeLeft = 0;
+            let challengeTotalExamples = 0;
+            let challengeCurrentDifficulty = 'easy';
+            let challengeInputTimeout = null;
+            
             // Базовые времена для расчета процентов (в секундах)
             const baseTimes = {
                 easy: 120,
@@ -650,11 +781,36 @@
                     difficultySelector.classList.add('hidden');
                     studyControls.classList.remove('hidden');
                     completionMessage.classList.add('hidden');
-                } else {
+                    challengeDifficulty.classList.add('hidden');
+                    challengeContainer.classList.add('hidden');
+                    inputArea.classList.remove('hidden');
+                    table.classList.remove('hidden');
+                    keyHint.classList.remove('hidden');
+                    instructions.classList.remove('hidden');
+                } else if (currentMode === 'practice') {
                     timerSection.classList.remove('hidden');
                     statsSection.classList.remove('hidden');
                     difficultySelector.classList.remove('hidden');
                     studyControls.classList.add('hidden');
+                    completionMessage.classList.add('hidden');
+                    challengeDifficulty.classList.add('hidden');
+                    challengeContainer.classList.add('hidden');
+                    inputArea.classList.remove('hidden');
+                    table.classList.remove('hidden');
+                    keyHint.classList.remove('hidden');
+                    instructions.classList.remove('hidden');
+                } else if (currentMode === 'challenge') {
+                    timerSection.classList.add('hidden');
+                    statsSection.classList.remove('hidden');
+                    difficultySelector.classList.add('hidden');
+                    studyControls.classList.add('hidden');
+                    completionMessage.classList.add('hidden');
+                    challengeDifficulty.classList.remove('hidden');
+                    inputArea.classList.add('hidden');
+                    table.classList.add('hidden');
+                    keyHint.classList.add('hidden');
+                    instructions.classList.add('hidden');
+                    challengeContainer.classList.remove('hidden');
                 }
             }
             
@@ -784,7 +940,7 @@
             // Функция для определения мобильного устройства
             function isMobileDevice() {
                 return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                       window.innerWidth <= 768;
+                    window.innerWidth <= 768;
             }
             
             // Активация скрытого поля ввода для мобильных устройств
@@ -937,12 +1093,14 @@
                 let progress;
                 if (currentMode === 'study') {
                     progress = 0;
-                } else {
+                } else if (currentMode === 'practice') {
                     const answeredCells = table.querySelectorAll('.cell[data-answered="true"]').length;
                     const prefilledCells = table.querySelectorAll('.cell[data-prefilled="true"]').length;
                     const userAnswered = answeredCells - prefilledCells;
                     progress = Math.round((userAnswered / emptyCells) * 100);
                     completedCells = userAnswered;
+                } else if (currentMode === 'challenge') {
+                    progress = Math.round((currentExampleIndex / challengeTotalExamples) * 100);
                 }
                 
                 progressPercentEl.textContent = `${progress}%`;
@@ -950,6 +1108,8 @@
                 
                 if (currentMode === 'practice' && progress >= 100 && !isCompleted) {
                     showCompletionMessage();
+                } else if (currentMode === 'challenge' && progress >= 100 && !isCompleted) {
+                    showChallengeCompletion();
                 }
             }
             
@@ -1265,11 +1425,160 @@
                 timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
             
+            // Функции для режима Вызов
+            function initChallenge() {
+                // Сброс состояния
+                correctCount = 0;
+                incorrectCount = 0;
+                currentExampleIndex = 0;
+                challengeExamples = [];
+                
+                // Определяем количество примеров в зависимости от сложности
+                if (challengeCurrentDifficulty === 'easy') {
+                    challengeTotalExamples = 10;
+                } else if (challengeCurrentDifficulty === 'medium') {
+                    challengeTotalExamples = 30;
+                } else if (challengeCurrentDifficulty === 'hard') {
+                    challengeTotalExamples = 100;
+                }
+                
+                // Генерируем уникальные примеры
+                const usedExamples = new Set();
+                while (challengeExamples.length < challengeTotalExamples) {
+                    const a = Math.floor(Math.random() * 10) + 1;
+                    const b = Math.floor(Math.random() * 10) + 1;
+                    const exampleKey = `${a}-${b}`;
+                    
+                    if (!usedExamples.has(exampleKey)) {
+                        usedExamples.add(exampleKey);
+                        challengeExamples.push({ a, b, answer: a * b });
+                    }
+                }
+                
+                // Сбрасываем статистику
+                correctCountEl.textContent = '0';
+                incorrectCountEl.textContent = '0';
+                
+                // Показываем первый пример
+                showNextChallengeExample();
+                
+                // Устанавливаем фокус на поле ввода
+                challengeInput.focus();
+            }
+
+            function showNextChallengeExample() {
+                // Проверяем, есть ли примеры и не вышли ли мы за пределы массива
+                if (!challengeExamples.length || currentExampleIndex >= challengeExamples.length) {
+                    // Все примеры пройдены или примеры не созданы
+                    showChallengeCompletion();
+                    return;
+                }
+                
+                const example = challengeExamples[currentExampleIndex];
+                if (!example) {
+                    console.error('Пример не найден по индексу:', currentExampleIndex);
+                    return;
+                }
+                
+                challengeQuestion.textContent = `${example.a} × ${example.b} = ?`;
+                challengeInput.value = '';
+                challengeProgress.textContent = `Пример ${currentExampleIndex + 1} из ${challengeTotalExamples}`;
+                
+                // Сбрасываем таймаут автопроверки
+                if (challengeInputTimeout) {
+                    clearTimeout(challengeInputTimeout);
+                    challengeInputTimeout = null;
+                }
+                
+                // Запускаем таймер для ВСЕХ уровней (легкий - 10 сек, средний - 5 сек, сложный - 3 сек)
+                challengeTimeLeft = challengeCurrentDifficulty === 'easy' ? 10 : 
+                                challengeCurrentDifficulty === 'medium' ? 5 : 3;
+                challengeTimer.textContent = challengeTimeLeft;
+                challengeTimer.classList.remove('hidden');
+                
+                // Останавливаем предыдущий таймер, если он был
+                if (challengeTimerInterval) {
+                    clearInterval(challengeTimerInterval);
+                }
+                
+                // Запускаем новый таймер
+                challengeTimerInterval = setInterval(() => {
+                    challengeTimeLeft--;
+                    challengeTimer.textContent = challengeTimeLeft;
+                    
+                    if (challengeTimeLeft <= 0) {
+                        clearInterval(challengeTimerInterval);
+                        // Время вышло - считаем ошибкой
+                        incorrectCount++;
+                        incorrectCountEl.textContent = incorrectCount;
+                        currentExampleIndex++;
+                        updateProgress();
+                        showNextChallengeExample();
+                    }
+                }, 1000);
+                
+                updateProgress();
+            }
+            
+            function checkChallengeAnswer() {
+                // Проверяем, есть ли текущий пример
+                if (!challengeExamples.length || currentExampleIndex >= challengeExamples.length) {
+                    console.error('Нет примеров для проверки');
+                    return;
+                }
+                
+                const example = challengeExamples[currentExampleIndex];
+                if (!example) {
+                    console.error('Пример не найден по индексу:', currentExampleIndex);
+                    return;
+                }
+                
+                const userAnswer = parseInt(challengeInput.value);
+                const correctAnswer = example.answer;
+                
+                // Останавливаем таймер
+                if (challengeTimerInterval) {
+                    clearInterval(challengeTimerInterval);
+                    challengeTimerInterval = null;
+                }
+                
+                // Сбрасываем таймаут автопроверки
+                if (challengeInputTimeout) {
+                    clearTimeout(challengeInputTimeout);
+                    challengeInputTimeout = null;
+                }
+                
+                if (userAnswer === correctAnswer) {
+                    correctCount++;
+                    correctCountEl.textContent = correctCount;
+                } else {
+                    incorrectCount++;
+                    incorrectCountEl.textContent = incorrectCount;
+                }
+                
+                currentExampleIndex++;
+                updateProgress();
+                showNextChallengeExample();
+            }
+            
+            function showChallengeCompletion() {
+                completionMessage.innerHTML = `
+                    <h3>🎉 Вызов завершен! 🎉</h3>
+                    <p>Правильных ответов: <strong>${correctCount}</strong></p>
+                    <p>Ошибок: <strong>${incorrectCount}</strong></p>
+                    <p>Точность: <strong>${Math.round((correctCount / challengeTotalExamples) * 100)}%</strong></p>
+                    <p>${correctCount === challengeTotalExamples ? 'Идеальный результат! 🏆' : 'Продолжайте тренироваться! 💪'}</p>
+                `;
+                completionMessage.classList.remove('hidden');
+                isCompleted = true;
+            }
+            
             // Обработчики событий
             studyModeBtn.addEventListener('click', function() {
                 currentMode = 'study';
                 studyModeBtn.classList.add('active');
                 practiceModeBtn.classList.remove('active');
+                challengeModeBtn.classList.remove('active');
                 userInput = '';
                 updateCurrentInput();
                 updateQuestionText();
@@ -1281,10 +1590,22 @@
                 currentMode = 'practice';
                 practiceModeBtn.classList.add('active');
                 studyModeBtn.classList.remove('active');
+                challengeModeBtn.classList.remove('active');
                 userInput = '';
                 updateCurrentInput();
                 updateQuestionText();
                 initTable();
+            });
+            
+            challengeModeBtn.addEventListener('click', function() {
+                currentMode = 'challenge';
+                challengeModeBtn.classList.add('active');
+                studyModeBtn.classList.remove('active');
+                practiceModeBtn.classList.remove('active');
+                challengeExamples = []; // Сбрасываем примеры
+                challengeContainer.classList.add('hidden');
+                updateVisibility();
+                initChallenge();
             });
             
             difficultyEasyBtn.addEventListener('click', function() {
@@ -1292,7 +1613,9 @@
                 difficultyEasyBtn.classList.add('active');
                 difficultyMediumBtn.classList.remove('active');
                 difficultyHardBtn.classList.remove('active');
-                initTable();
+                if (currentMode === 'practice') {
+                    initTable();
+                }
             });
             
             difficultyMediumBtn.addEventListener('click', function() {
@@ -1300,7 +1623,9 @@
                 difficultyMediumBtn.classList.add('active');
                 difficultyEasyBtn.classList.remove('active');
                 difficultyHardBtn.classList.remove('active');
-                initTable();
+                if (currentMode === 'practice') {
+                    initTable();
+                }
             });
             
             difficultyHardBtn.addEventListener('click', function() {
@@ -1308,7 +1633,34 @@
                 difficultyHardBtn.classList.add('active');
                 difficultyEasyBtn.classList.remove('active');
                 difficultyMediumBtn.classList.remove('active');
-                initTable();
+                if (currentMode === 'practice') {
+                    initTable();
+                }
+            });
+            
+            // Обработчики для выбора сложности в режиме Вызов
+            challengeEasyBtn.addEventListener('click', function() {
+                challengeCurrentDifficulty = 'easy';
+                challengeEasyBtn.classList.add('active');
+                challengeMediumBtn.classList.remove('active');
+                challengeHardBtn.classList.remove('active');
+                initChallenge();
+            });
+            
+            challengeMediumBtn.addEventListener('click', function() {
+                challengeCurrentDifficulty = 'medium';
+                challengeMediumBtn.classList.add('active');
+                challengeEasyBtn.classList.remove('active');
+                challengeHardBtn.classList.remove('active');
+                initChallenge();
+            });
+            
+            challengeHardBtn.addEventListener('click', function() {
+                challengeCurrentDifficulty = 'hard';
+                challengeHardBtn.classList.add('active');
+                challengeEasyBtn.classList.remove('active');
+                challengeMediumBtn.classList.remove('active');
+                initChallenge();
             });
             
             hideTableBtn.addEventListener('click', function() {
@@ -1325,6 +1677,46 @@
             
             // Обработчики для мобильного ввода
             mobileInput.addEventListener('input', handleMobileInput);
+            
+            // Обработчик ввода для режима Вызов
+            challengeInput.addEventListener('input', function() {
+                // Разрешаем только цифры
+                this.value = this.value.replace(/[^0-9]/g, '');
+                
+                // Останавливаем таймер при вводе для ВСЕХ уровней
+                if (challengeTimerInterval) {
+                    clearInterval(challengeTimerInterval);
+                    challengeTimerInterval = null;
+                    challengeTimer.classList.add('hidden');
+                }
+                
+                // Сбрасываем предыдущий таймаут
+                if (challengeInputTimeout) {
+                    clearTimeout(challengeInputTimeout);
+                }
+                
+                // Устанавливаем новый таймаут для автопроверки (1.5 секунды после последнего ввода)
+                challengeInputTimeout = setTimeout(() => {
+                    if (this.value) {
+                        checkChallengeAnswer();
+                    }
+                }, 1500);
+            });
+            
+            // Добавляем обработчик нажатия Enter для ручного подтверждения
+            challengeInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    if (this.value) {
+                        // Сбрасываем таймаут автопроверки
+                        if (challengeInputTimeout) {
+                            clearTimeout(challengeInputTimeout);
+                            challengeInputTimeout = null;
+                        }
+                        checkChallengeAnswer();
+                    }
+                }
+            });
             
             table.addEventListener('keydown', handleKeyDown);
             
