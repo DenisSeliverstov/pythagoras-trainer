@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тренажер Пифагора</title>
     <style>
-        /* Стили остаются без изменений */
         * {
             margin: 0;
             padding: 0;
@@ -60,10 +59,22 @@
             align-items: center;
         }
 
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding-bottom: 20px;
+        }
+
+        .difficulty-selector.hidden {
+            display: none;
+        }
+
         .study-controls {
             display: flex;
             gap: 10px;
             align-items: center;
+            padding-bottom: 20px;
         }
 
         .study-controls.hidden {
@@ -79,6 +90,11 @@
             font-weight: 600;
             color: #475569;
             transition: all 0.2s ease;
+        }
+
+        .button-small {
+            padding: 5px 8px;
+            font-size: 0.9rem;
         }
 
         button:hover {
@@ -206,14 +222,15 @@
         }
 
         .pythagoras-table td {
-            width: 50px;
-            height: 50px;
+            width: 65px;
+            height: 65px;
             text-align: center;
             border: 1px solid #e5e7eb;
             font-weight: 600;
             transition: all 0.2s ease;
             cursor: pointer;
             position: relative;
+            font-size: 1.5rem;
         }
 
         .pythagoras-table td.header {
@@ -241,11 +258,11 @@
         }
 
         .pythagoras-table td.highlight-row {
-            background-color: #dbeafe;
+            background-color: #dbeafe !important;
         }
 
         .pythagoras-table td.highlight-col {
-            background-color: #dbeafe;
+            background-color: #dbeafe !important;
         }
 
         .pythagoras-table td.user-input {
@@ -268,6 +285,11 @@
             color: #0369a1;
         }
 
+        .pythagoras-table td.prefilled {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
         .progress-container {
             margin-top: 25px;
         }
@@ -284,6 +306,37 @@
             background-color: #10b981;
             width: 0%;
             transition: width 0.3s ease;
+        }
+
+        .completion-message {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border-radius: 12px;
+            margin: 20px 0;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .completion-message h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .completion-message p {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .instructions {
@@ -325,7 +378,7 @@
                 align-items: center;
             }
             
-            .mode-selector, .study-controls {
+            .mode-selector, .difficulty-selector, .study-controls {
                 width: 100%;
                 justify-content: center;
             }
@@ -384,10 +437,7 @@
                 <button id="study-mode" class="active">Режим изучения</button>
                 <button id="practice-mode">Режим тренировки</button>
             </div>
-            <div class="study-controls" id="study-controls">
-                <button id="hide-table">Скрыть таблицу</button>
-                <button id="show-table">Показать таблицу</button>
-            </div>
+            
         </div>
         
         <div class="timer-section hidden" id="timer-section">
@@ -415,7 +465,20 @@
             <div class="current-input" id="current-input">?</div>
         </div>
         
+        <div id="completion-message" class="completion-message hidden">
+            <!-- Сообщение о завершении будет здесь -->
+        </div>
+        
         <div class="table-container">
+            <div class="study-controls" id="study-controls">
+                <button id="hide-table" class="button-small">Скрыть таблицу</button>
+                <button id="show-table" class="button-small">Показать таблицу</button>
+            </div>
+            <div class="difficulty-selector hidden" id="difficulty-selector">
+                <button id="difficulty-easy" class="button-small active">Легкий</button>
+                <button id="difficulty-medium" class="button-small">Средний</button>
+                <button id="difficulty-hard" class="button-small">Сложный</button>
+            </div>
             <table class="pythagoras-table" id="multiplication-table" tabindex="0">
                 <!-- Таблица будет сгенерирована JavaScript -->
             </table>
@@ -441,8 +504,7 @@
         <div class="instructions">
             <h3>Как пользоваться тренажером:</h3>
             <p><strong>Режим изучения:</strong> Изучайте таблицу умножения. Используйте кнопки "Скрыть таблицу" и "Показать таблицу" для управления отображением.</p>
-            <p><strong>Режим тренировки:</strong> Вводите цифры - они сразу отображаются в ячейке. Зеленый цвет - правильный ответ, красный - ошибка.</p>
-            <p>Можно исправлять неправильные ответы, просто введя новое число поверх старого.</p>
+            <p><strong>Режим тренировки:</strong> Выберите уровень сложности и заполните пропущенные ячейки. Легкий - 2/3 заполнено, Средний - 1/3 заполнено, Сложный - пустая таблица.</p>
         </div>
     </div>
 
@@ -452,6 +514,10 @@
             const table = document.getElementById('multiplication-table');
             const studyModeBtn = document.getElementById('study-mode');
             const practiceModeBtn = document.getElementById('practice-mode');
+            const difficultyEasyBtn = document.getElementById('difficulty-easy');
+            const difficultyMediumBtn = document.getElementById('difficulty-medium');
+            const difficultyHardBtn = document.getElementById('difficulty-hard');
+            const difficultySelector = document.getElementById('difficulty-selector');
             const correctCountEl = document.getElementById('correct-count');
             const incorrectCountEl = document.getElementById('incorrect-count');
             const progressPercentEl = document.getElementById('progress-percent');
@@ -466,37 +532,125 @@
             const studyControls = document.getElementById('study-controls');
             const hideTableBtn = document.getElementById('hide-table');
             const showTableBtn = document.getElementById('show-table');
+            const completionMessage = document.getElementById('completion-message');
             
             // Переменные состояния
             let currentMode = 'study';
+            let currentDifficulty = 'easy'; // 'easy', 'medium', 'hard'
             let correctCount = 0;
             let incorrectCount = 0;
             let totalCells = 0;
             let completedCells = 0;
+            let emptyCells = 0;
             let currentCell = null;
             let activeCell = null;
             let currentRow = 1;
             let currentCol = 1;
             let userInput = '';
             let inputTimeout = null;
-            let isTableHidden = false; // Состояние таблицы в режиме изучения
+            let isTableHidden = false;
+            let isCompleted = false;
             
             // Таймер
             let timerInterval = null;
             let timerSeconds = 0;
             let isTimerRunning = false;
+
+            // Базовые времена для расчета процентов (в секундах)
+            const baseTimes = {
+                easy: 120,   // 2 минуты для легкого уровня
+                medium: 180, // 3 минуты для среднего
+                hard: 300    // 5 минут для сложного
+            };
             
             // Функция для обновления видимости элементов
             function updateVisibility() {
                 if (currentMode === 'study') {
                     timerSection.classList.add('hidden');
                     statsSection.classList.add('hidden');
-                    studyControls.classList.remove('hidden');
+                    difficultySelector.classList.add('hidden'); // Скрываем уровни сложности в режиме изучения
+                    studyControls.classList.remove('hidden');   // Показываем кнопки изучения
+                    completionMessage.classList.add('hidden');
                 } else {
                     timerSection.classList.remove('hidden');
                     statsSection.classList.remove('hidden');
-                    studyControls.classList.add('hidden');
+                    difficultySelector.classList.remove('hidden'); // Показываем уровни сложности в режиме тренировки
+                    studyControls.classList.add('hidden');         // Скрываем кнопки изучения
                 }
+            }
+            
+            // Функция для генерации случайных предзаполненных ячеек
+            function generatePrefilledCells(fillRatio) {
+                const cells = table.querySelectorAll('.cell');
+                const total = cells.length;
+                const toFill = Math.floor(total * fillRatio);
+                const filledIndices = new Set();
+                
+                // Заполняем случайные ячейки
+                while (filledIndices.size < toFill) {
+                    const randomIndex = Math.floor(Math.random() * total);
+                    filledIndices.add(randomIndex);
+                }
+                
+                cells.forEach((cell, index) => {
+                    if (filledIndices.has(index)) {
+                        // Предзаполняем ячейку
+                        const row = parseInt(cell.dataset.row);
+                        const col = parseInt(cell.dataset.col);
+                        cell.textContent = row * col;
+                        cell.classList.add('prefilled');
+                        cell.dataset.answered = 'true';
+                        cell.dataset.prefilled = 'true';
+                    } else {
+                        // Оставляем пустой для заполнения
+                        cell.textContent = '';
+                        cell.dataset.answered = 'false';
+                        cell.dataset.prefilled = 'false';
+                    }
+                });
+                
+                emptyCells = total - toFill;
+                updateProgress();
+            }
+            
+            // Функция для расчета результата
+            function calculateResult() {
+                const baseTime = baseTimes[currentDifficulty];
+                const userTime = timerSeconds;
+                let percentage;
+                
+                if (userTime <= baseTime) {
+                    percentage = 95 + Math.random() * 4; // 95-99% если быстрее базового времени
+                } else {
+                    // Логарифмическое уменьшение процента
+                    const timeRatio = userTime / baseTime;
+                    percentage = Math.max(10, 100 - (timeRatio - 1) * 30);
+                }
+                
+                return Math.min(99, Math.round(percentage));
+            }
+            
+            // Функция показа сообщения о завершении
+            function showCompletionMessage() {
+                const percentage = calculateResult();
+                const timeFormatted = formatTime(timerSeconds);
+                
+                completionMessage.innerHTML = `
+                    <h3>🎉 Поздравляем! 🎉</h3>
+                    <p>Вы заполнили таблицу умножения за ${timeFormatted}</p>
+                    <p>Вы справились лучше, чем <strong>${percentage}%</strong> других пользователей!</p>
+                    <p>Продолжайте в том же духе! 💪</p>
+                `;
+                completionMessage.classList.remove('hidden');
+                isCompleted = true;
+                stopTimer();
+            }
+            
+            // Функция форматирования времени
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
             }
             
             // Функция для скрытия/показа таблицы в режиме изучения
@@ -531,6 +685,13 @@
             
             // Функция для установки активной ячейки
             function setActiveCell(row, col) {
+                // В режиме тренировки проверяем предыдущий ввод перед сменой ячейки
+                if (currentMode === 'practice' && userInput && activeCell && 
+                    activeCell.dataset.prefilled !== 'true' && 
+                    (row !== currentRow || col !== currentCol)) {
+                    checkAnswer();
+                }
+                
                 currentRow = row;
                 currentCol = col;
                 userInput = '';
@@ -544,10 +705,13 @@
                 table.innerHTML = '';
                 totalCells = 0;
                 completedCells = 0;
+                emptyCells = 0;
                 currentRow = 1;
                 currentCol = 1;
                 userInput = '';
+                isCompleted = false;
                 updateCurrentInput();
+                completionMessage.classList.add('hidden');
                 
                 // Создание заголовков
                 const headerRow = document.createElement('tr');
@@ -584,7 +748,8 @@
                         cell.dataset.value = i * j;
                         cell.dataset.answered = 'false';
                         cell.dataset.userAnswer = '';
-                        cell.dataset.revealed = 'true'; // По умолчанию все ячейки открыты
+                        cell.dataset.revealed = 'true';
+                        cell.dataset.prefilled = 'false';
                         
                         if (currentMode === 'study') {
                             // В режиме изучения показываем всю таблицу
@@ -607,12 +772,22 @@
                     table.appendChild(row);
                 }
                 
+                // Для режима тренировки генерируем предзаполненные ячейки
+                if (currentMode === 'practice') {
+                    const fillRatios = {
+                        easy: 0.67,   // 2/3 заполнено
+                        medium: 0.33, // 1/3 заполнено
+                        hard: 0       // пустая таблица
+                    };
+                    generatePrefilledCells(fillRatios[currentDifficulty]);
+                }
+                
                 // Устанавливаем фокус на таблицу для работы клавиатуры
                 table.focus();
                 updateActiveCell();
                 updateProgress();
                 updateQuestionText();
-                updateVisibility(); // Обновляем видимость элементов
+                updateVisibility();
             }
             
             // Обновление активной ячейки
@@ -632,6 +807,7 @@
                     } else {
                         activeCell.classList.add('active');
                     }
+                    // ВСЕГДА подсвечиваем строку и столбец, независимо от состояния ячейки
                     highlightRowAndColumn(currentRow, currentCol);
                 }
             }
@@ -660,13 +836,35 @@
                 }
             }
             
+            // Обновление прогресса
+            function updateProgress() {
+                let progress;
+                if (currentMode === 'study') {
+                    progress = 0;
+                } else {
+                    const answeredCells = table.querySelectorAll('.cell[data-answered="true"]').length;
+                    const prefilledCells = table.querySelectorAll('.cell[data-prefilled="true"]').length;
+                    const userAnswered = answeredCells - prefilledCells;
+                    progress = Math.round((userAnswered / emptyCells) * 100);
+                    completedCells = userAnswered;
+                }
+                
+                progressPercentEl.textContent = `${progress}%`;
+                progressFillEl.style.width = `${progress}%`;
+                
+                // Проверяем завершение
+                if (currentMode === 'practice' && progress >= 100 && !isCompleted) {
+                    showCompletionMessage();
+                }
+            }
+            
             // Обработчик клика по ячейке
             function handleCellClick(event) {
                 const cell = event.target;
                 const row = parseInt(cell.dataset.row);
                 const col = parseInt(cell.dataset.col);
                 
-                // Устанавливаем активную ячейку
+                // Устанавливаем активную ячейку (автоматически проверяет предыдущий ввод в режиме тренировки)
                 setActiveCell(row, col);
                 
                 // В режиме изучения при скрытой таблице - открываем ячейку
@@ -675,11 +873,6 @@
                     cell.classList.add('revealed');
                     cell.dataset.revealed = 'true';
                     return;
-                }
-                
-                // В режиме тренировки проверяем предыдущий ввод перед сменой ячейки
-                if (currentMode === 'practice' && userInput && (row !== currentRow || col !== currentCol)) {
-                    checkAnswer();
                 }
             }
             
@@ -694,6 +887,7 @@
             
             // Обработчик ухода мыши с ячейки
             function handleCellHoverOut() {
+                // Не убираем подсветку, если есть активная ячейка
                 if (!activeCell) {
                     removeHighlights();
                 }
@@ -730,6 +924,8 @@
             
             // Обработка нажатий клавиш
             function handleKeyDown(event) {
+                if (isCompleted) return;
+                
                 // Обработка Enter для открытия ячеек в режиме изучения
                 if (event.key === 'Enter') {
                     event.preventDefault();
@@ -750,12 +946,13 @@
                         }
                         
                         userInput += event.key;
-                        if (userInput.length > 2) {
-                            userInput = userInput.slice(0, 2);
+                        // Разрешаем ввод до 3 цифр (для чисел 100)
+                        if (userInput.length > 3) {
+                            userInput = userInput.slice(0, 3);
                         }
                         
                         // Сохраняем ввод пользователя в данные ячейки
-                        if (activeCell) {
+                        if (activeCell && activeCell.dataset.prefilled !== 'true') {
                             activeCell.dataset.userAnswer = userInput;
                             activeCell.textContent = userInput;
                             activeCell.classList.add('user-input');
@@ -783,7 +980,7 @@
                     if (event.key === 'Backspace') {
                         event.preventDefault();
                         userInput = userInput.slice(0, -1);
-                        if (activeCell) {
+                        if (activeCell && activeCell.dataset.prefilled !== 'true') {
                             activeCell.dataset.userAnswer = userInput;
                             activeCell.textContent = userInput || '';
                             if (!userInput) {
@@ -839,7 +1036,7 @@
             
             // Проверка ответа
             function checkAnswer() {
-                if (!userInput || !activeCell) return;
+                if (!userInput || !activeCell || activeCell.dataset.prefilled === 'true') return;
                 
                 // Сбрасываем таймаут
                 if (inputTimeout) {
@@ -860,7 +1057,6 @@
                     // Обновляем счетчики только если это новый правильный ответ
                     if (!activeCell.classList.contains('correct-old')) {
                         correctCount++;
-                        completedCells++;
                         activeCell.classList.add('correct-old');
                     }
                     
@@ -884,10 +1080,8 @@
                 updateCurrentInput();
                 updateProgress();
                 
-                // Проверяем, заполнена ли вся таблица
-                if (completedCells === totalCells) {
-                    stopTimer();
-                }
+                // После проверки ответа ВСЕГДА обновляем подсветку
+                updateActiveCell();
             }
             
             // Таймер
@@ -922,30 +1116,13 @@
                 incorrectCountEl.textContent = '0';
                 updateProgress();
                 
-                // Сбрасываем таблицу
-                const cells = table.querySelectorAll('.cell');
-                cells.forEach(cell => {
-                    cell.textContent = '';
-                    cell.classList.remove('correct', 'incorrect', 'user-input', 'correct-old', 'incorrect-old');
-                    cell.dataset.answered = 'false';
-                    cell.dataset.userAnswer = '';
-                });
-                
-                userInput = '';
-                updateCurrentInput();
+                initTable();
             }
             
             function updateTimerDisplay() {
                 const minutes = Math.floor(timerSeconds / 60);
                 const seconds = timerSeconds % 60;
                 timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-            
-            // Обновление прогресса
-            function updateProgress() {
-                const progress = Math.round((completedCells / totalCells) * 100);
-                progressPercentEl.textContent = `${progress}%`;
-                progressFillEl.style.width = `${progress}%`;
             }
             
             // Обработчики событий
@@ -956,7 +1133,7 @@
                 userInput = '';
                 updateCurrentInput();
                 updateQuestionText();
-                isTableHidden = false; // Сбрасываем состояние скрытия таблицы
+                isTableHidden = false;
                 initTable();
             });
             
@@ -967,6 +1144,30 @@
                 userInput = '';
                 updateCurrentInput();
                 updateQuestionText();
+                initTable();
+            });
+            
+            difficultyEasyBtn.addEventListener('click', function() {
+                currentDifficulty = 'easy';
+                difficultyEasyBtn.classList.add('active');
+                difficultyMediumBtn.classList.remove('active');
+                difficultyHardBtn.classList.remove('active');
+                initTable();
+            });
+            
+            difficultyMediumBtn.addEventListener('click', function() {
+                currentDifficulty = 'medium';
+                difficultyMediumBtn.classList.add('active');
+                difficultyEasyBtn.classList.remove('active');
+                difficultyHardBtn.classList.remove('active');
+                initTable();
+            });
+            
+            difficultyHardBtn.addEventListener('click', function() {
+                currentDifficulty = 'hard';
+                difficultyHardBtn.classList.add('active');
+                difficultyEasyBtn.classList.remove('active');
+                difficultyMediumBtn.classList.remove('active');
                 initTable();
             });
             
