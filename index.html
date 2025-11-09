@@ -510,684 +510,761 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Элементы DOM
-            const table = document.getElementById('multiplication-table');
-            const studyModeBtn = document.getElementById('study-mode');
-            const practiceModeBtn = document.getElementById('practice-mode');
-            const difficultyEasyBtn = document.getElementById('difficulty-easy');
-            const difficultyMediumBtn = document.getElementById('difficulty-medium');
-            const difficultyHardBtn = document.getElementById('difficulty-hard');
-            const difficultySelector = document.getElementById('difficulty-selector');
-            const correctCountEl = document.getElementById('correct-count');
-            const incorrectCountEl = document.getElementById('incorrect-count');
-            const progressPercentEl = document.getElementById('progress-percent');
-            const progressFillEl = document.getElementById('progress-fill');
-            const inputArea = document.getElementById('input-area');
-            const questionText = document.getElementById('question-text');
-            const currentInputEl = document.getElementById('current-input');
-            const timerEl = document.getElementById('timer');
-            const resetTimerBtn = document.getElementById('reset-timer');
-            const timerSection = document.getElementById('timer-section');
-            const statsSection = document.getElementById('stats-section');
-            const studyControls = document.getElementById('study-controls');
-            const hideTableBtn = document.getElementById('hide-table');
-            const showTableBtn = document.getElementById('show-table');
-            const completionMessage = document.getElementById('completion-message');
-            
-            // Переменные состояния
-            let currentMode = 'study';
-            let currentDifficulty = 'easy'; // 'easy', 'medium', 'hard'
-            let correctCount = 0;
-            let incorrectCount = 0;
-            let totalCells = 0;
-            let completedCells = 0;
-            let emptyCells = 0;
-            let currentCell = null;
-            let activeCell = null;
-            let currentRow = 1;
-            let currentCol = 1;
-            let userInput = '';
-            let inputTimeout = null;
-            let isTableHidden = false;
-            let isCompleted = false;
-            
-            // Таймер
-            let timerInterval = null;
-            let timerSeconds = 0;
-            let isTimerRunning = false;
+        // Элементы DOM
+        const table = document.getElementById('multiplication-table');
+        const studyModeBtn = document.getElementById('study-mode');
+        const practiceModeBtn = document.getElementById('practice-mode');
+        const difficultyEasyBtn = document.getElementById('difficulty-easy');
+        const difficultyMediumBtn = document.getElementById('difficulty-medium');
+        const difficultyHardBtn = document.getElementById('difficulty-hard');
+        const difficultySelector = document.getElementById('difficulty-selector');
+        const correctCountEl = document.getElementById('correct-count');
+        const incorrectCountEl = document.getElementById('incorrect-count');
+        const progressPercentEl = document.getElementById('progress-percent');
+        const progressFillEl = document.getElementById('progress-fill');
+        const inputArea = document.getElementById('input-area');
+        const questionText = document.getElementById('question-text');
+        const currentInputEl = document.getElementById('current-input');
+        const timerEl = document.getElementById('timer');
+        const resetTimerBtn = document.getElementById('reset-timer');
+        const timerSection = document.getElementById('timer-section');
+        const statsSection = document.getElementById('stats-section');
+        const studyControls = document.getElementById('study-controls');
+        const hideTableBtn = document.getElementById('hide-table');
+        const showTableBtn = document.getElementById('show-table');
+        const completionMessage = document.getElementById('completion-message');
+        
+        // Переменные состояния
+        let currentMode = 'study';
+        let currentDifficulty = 'easy';
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let totalCells = 0;
+        let completedCells = 0;
+        let emptyCells = 0;
+        let currentCell = null;
+        let activeCell = null;
+        let currentRow = 1;
+        let currentCol = 1;
+        let userInput = '';
+        let inputTimeout = null;
+        let isTableHidden = false;
+        let isCompleted = false;
+        
+        // Таймер
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let isTimerRunning = false;
 
-            // Базовые времена для расчета процентов (в секундах)
-            const baseTimes = {
-                easy: 120,   // 2 минуты для легкого уровня
-                medium: 180, // 3 минуты для среднего
-                hard: 300    // 5 минут для сложного
-            };
-            
-            // Функция для обновления видимости элементов
-            function updateVisibility() {
-                if (currentMode === 'study') {
-                    timerSection.classList.add('hidden');
-                    statsSection.classList.add('hidden');
-                    difficultySelector.classList.add('hidden'); // Скрываем уровни сложности в режиме изучения
-                    studyControls.classList.remove('hidden');   // Показываем кнопки изучения
-                    completionMessage.classList.add('hidden');
-                } else {
-                    timerSection.classList.remove('hidden');
-                    statsSection.classList.remove('hidden');
-                    difficultySelector.classList.remove('hidden'); // Показываем уровни сложности в режиме тренировки
-                    studyControls.classList.add('hidden');         // Скрываем кнопки изучения
-                }
-            }
-            
-            // Функция для генерации случайных предзаполненных ячеек
-            function generatePrefilledCells(fillRatio) {
-                const cells = table.querySelectorAll('.cell');
-                const total = cells.length;
-                const toFill = Math.floor(total * fillRatio);
-                const filledIndices = new Set();
-                
-                // Заполняем случайные ячейки
-                while (filledIndices.size < toFill) {
-                    const randomIndex = Math.floor(Math.random() * total);
-                    filledIndices.add(randomIndex);
-                }
-                
-                cells.forEach((cell, index) => {
-                    if (filledIndices.has(index)) {
-                        // Предзаполняем ячейку
-                        const row = parseInt(cell.dataset.row);
-                        const col = parseInt(cell.dataset.col);
-                        cell.textContent = row * col;
-                        cell.classList.add('prefilled');
-                        cell.dataset.answered = 'true';
-                        cell.dataset.prefilled = 'true';
-                    } else {
-                        // Оставляем пустой для заполнения
-                        cell.textContent = '';
-                        cell.dataset.answered = 'false';
-                        cell.dataset.prefilled = 'false';
-                    }
-                });
-                
-                emptyCells = total - toFill;
-                updateProgress();
-            }
-            
-            // Функция для расчета результата
-            function calculateResult() {
-                const baseTime = baseTimes[currentDifficulty];
-                const userTime = timerSeconds;
-                let percentage;
-                
-                if (userTime <= baseTime) {
-                    percentage = 95 + Math.random() * 4; // 95-99% если быстрее базового времени
-                } else {
-                    // Логарифмическое уменьшение процента
-                    const timeRatio = userTime / baseTime;
-                    percentage = Math.max(10, 100 - (timeRatio - 1) * 30);
-                }
-                
-                return Math.min(99, Math.round(percentage));
-            }
-            
-            // Функция показа сообщения о завершении
-            function showCompletionMessage() {
-                const percentage = calculateResult();
-                const timeFormatted = formatTime(timerSeconds);
-                
-                completionMessage.innerHTML = `
-                    <h3>🎉 Поздравляем! 🎉</h3>
-                    <p>Вы заполнили таблицу умножения за ${timeFormatted}</p>
-                    <p>Вы справились лучше, чем <strong>${percentage}%</strong> других пользователей!</p>
-                    <p>Продолжайте в том же духе! 💪</p>
-                `;
-                completionMessage.classList.remove('hidden');
-                isCompleted = true;
-                stopTimer();
-            }
-            
-            // Функция форматирования времени
-            function formatTime(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return `${mins}:${secs.toString().padStart(2, '0')}`;
-            }
-            
-            // Функция для скрытия/показа таблицы в режиме изучения
-            function updateTableVisibility() {
-                const cells = table.querySelectorAll('.cell');
-                cells.forEach(cell => {
-                    if (isTableHidden) {
-                        // Скрываем таблицу - очищаем ВСЕ ячейки
-                        cell.textContent = '';
-                        cell.classList.remove('revealed');
-                        cell.dataset.revealed = 'false';
-                    } else {
-                        // Показываем всю таблицу
-                        cell.textContent = cell.dataset.value;
-                        cell.classList.add('revealed');
-                        cell.dataset.revealed = 'true';
-                    }
-                });
-                updateQuestionText();
-            }
-            
-            // Функция для открытия ячейки в режиме изучения
-            function revealCell() {
-                if (currentMode === 'study' && isTableHidden && activeCell) {
-                    const row = parseInt(activeCell.dataset.row);
-                    const col = parseInt(activeCell.dataset.col);
-                    activeCell.textContent = row * col;
-                    activeCell.classList.add('revealed');
-                    activeCell.dataset.revealed = 'true';
-                }
-            }
-            
-            // Функция для установки активной ячейки
-            function setActiveCell(row, col) {
-                // В режиме тренировки проверяем предыдущий ввод перед сменой ячейки
-                if (currentMode === 'practice' && userInput && activeCell && 
-                    activeCell.dataset.prefilled !== 'true' && 
-                    (row !== currentRow || col !== currentCol)) {
-                    checkAnswer();
-                }
-                
-                currentRow = row;
-                currentCol = col;
-                userInput = '';
-                updateActiveCell();
-                updateQuestionText();
-                updateCurrentInput();
-            }
-            
-            // Инициализация таблицы
-            function initTable() {
-                table.innerHTML = '';
-                totalCells = 0;
-                completedCells = 0;
-                emptyCells = 0;
-                currentRow = 1;
-                currentCol = 1;
-                userInput = '';
-                isCompleted = false;
-                updateCurrentInput();
+        // Базовые времена для расчета процентов (в секундах)
+        const baseTimes = {
+            easy: 120,
+            medium: 180,
+            hard: 300
+        };
+        
+        // Создаем скрытое поле ввода для мобильных устройств
+        const mobileInput = document.createElement('input');
+        mobileInput.type = 'text';
+        mobileInput.inputMode = 'numeric';
+        mobileInput.className = 'mobile-input';
+        mobileInput.id = 'mobile-input';
+        document.body.appendChild(mobileInput);
+        
+        // Функция для обновления видимости элементов
+        function updateVisibility() {
+            if (currentMode === 'study') {
+                timerSection.classList.add('hidden');
+                statsSection.classList.add('hidden');
+                difficultySelector.classList.add('hidden');
+                studyControls.classList.remove('hidden');
                 completionMessage.classList.add('hidden');
-                
-                // Создание заголовков
-                const headerRow = document.createElement('tr');
-                const emptyHeader = document.createElement('td');
-                emptyHeader.className = 'header';
-                emptyHeader.textContent = '×';
-                headerRow.appendChild(emptyHeader);
-                
-                for (let i = 1; i <= 10; i++) {
-                    const headerCell = document.createElement('td');
-                    headerCell.className = 'header';
-                    headerCell.textContent = i;
-                    headerRow.appendChild(headerCell);
+            } else {
+                timerSection.classList.remove('hidden');
+                statsSection.classList.remove('hidden');
+                difficultySelector.classList.remove('hidden');
+                studyControls.classList.add('hidden');
+            }
+        }
+        
+        // Функция для генерации случайных предзаполненных ячеек
+        function generatePrefilledCells(fillRatio) {
+            const cells = table.querySelectorAll('.cell');
+            const total = cells.length;
+            const toFill = Math.floor(total * fillRatio);
+            const filledIndices = new Set();
+            
+            while (filledIndices.size < toFill) {
+                const randomIndex = Math.floor(Math.random() * total);
+                filledIndices.add(randomIndex);
+            }
+            
+            cells.forEach((cell, index) => {
+                if (filledIndices.has(index)) {
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    cell.textContent = row * col;
+                    cell.classList.add('prefilled');
+                    cell.dataset.answered = 'true';
+                    cell.dataset.prefilled = 'true';
+                } else {
+                    cell.textContent = '';
+                    cell.dataset.answered = 'false';
+                    cell.dataset.prefilled = 'false';
                 }
+            });
+            
+            emptyCells = total - toFill;
+            updateProgress();
+        }
+        
+        // Функция для расчета результата
+        function calculateResult() {
+            const baseTime = baseTimes[currentDifficulty];
+            const userTime = timerSeconds;
+            let percentage;
+            
+            if (userTime <= baseTime) {
+                percentage = 95 + Math.random() * 4;
+            } else {
+                const timeRatio = userTime / baseTime;
+                percentage = Math.max(10, 100 - (timeRatio - 1) * 30);
+            }
+            
+            return Math.min(99, Math.round(percentage));
+        }
+        
+        // Функция показа сообщения о завершении
+        function showCompletionMessage() {
+            const percentage = calculateResult();
+            const timeFormatted = formatTime(timerSeconds);
+            
+            completionMessage.innerHTML = `
+                <h3>🎉 Поздравляем! 🎉</h3>
+                <p>Вы заполнили таблицу умножения за ${timeFormatted}</p>
+                <p>Вы справились лучше, чем <strong>${percentage}%</strong> других пользователей!</p>
+                <p>Продолжайте в том же духе! 💪</p>
+            `;
+            completionMessage.classList.remove('hidden');
+            isCompleted = true;
+            stopTimer();
+        }
+        
+        // Функция форматирования времени
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Функция для скрытия/показа таблицы в режиме изучения
+        function updateTableVisibility() {
+            const cells = table.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                if (isTableHidden) {
+                    cell.textContent = '';
+                    cell.classList.remove('revealed');
+                    cell.dataset.revealed = 'false';
+                } else {
+                    cell.textContent = cell.dataset.value;
+                    cell.classList.add('revealed');
+                    cell.dataset.revealed = 'true';
+                }
+            });
+            updateQuestionText();
+        }
+        
+        // Функция для открытия ячейки в режиме изучения
+        function revealCell() {
+            if (currentMode === 'study' && isTableHidden && activeCell) {
+                const row = parseInt(activeCell.dataset.row);
+                const col = parseInt(activeCell.dataset.col);
+                activeCell.textContent = row * col;
+                activeCell.classList.add('revealed');
+                activeCell.dataset.revealed = 'true';
+            }
+        }
+        
+        // Функция для установки активной ячейки
+        function setActiveCell(row, col) {
+            // В режиме тренировки проверяем предыдущий ввод перед сменой ячейки
+            if (currentMode === 'practice' && userInput && activeCell && 
+                activeCell.dataset.prefilled !== 'true' && 
+                (row !== currentRow || col !== currentCol)) {
+                checkAnswer();
+            }
+            
+            currentRow = row;
+            currentCol = col;
+            userInput = '';
+            updateActiveCell();
+            updateQuestionText();
+            updateCurrentInput();
+            
+            // На мобильных устройствах фокусируемся на поле ввода
+            if (currentMode === 'practice' && isMobileDevice()) {
+                setTimeout(() => {
+                    mobileInput.focus();
+                }, 100);
+            }
+        }
+        
+        // Функция для определения мобильного устройства
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                window.innerWidth <= 768;
+        }
+        
+        // Инициализация таблицы
+        function initTable() {
+            table.innerHTML = '';
+            totalCells = 0;
+            completedCells = 0;
+            emptyCells = 0;
+            currentRow = 1;
+            currentCol = 1;
+            userInput = '';
+            isCompleted = false;
+            updateCurrentInput();
+            completionMessage.classList.add('hidden');
+            
+            // Создание заголовков
+            const headerRow = document.createElement('tr');
+            const emptyHeader = document.createElement('td');
+            emptyHeader.className = 'header';
+            emptyHeader.textContent = '×';
+            headerRow.appendChild(emptyHeader);
+            
+            for (let i = 1; i <= 10; i++) {
+                const headerCell = document.createElement('td');
+                headerCell.className = 'header';
+                headerCell.textContent = i;
+                headerRow.appendChild(headerCell);
+            }
+            
+            table.appendChild(headerRow);
+            
+            // Создание строк таблицы
+            for (let i = 1; i <= 10; i++) {
+                const row = document.createElement('tr');
                 
-                table.appendChild(headerRow);
+                // Заголовок строки
+                const rowHeader = document.createElement('td');
+                rowHeader.className = 'header';
+                rowHeader.textContent = i;
+                row.appendChild(rowHeader);
                 
-                // Создание строк таблицы
-                for (let i = 1; i <= 10; i++) {
-                    const row = document.createElement('tr');
+                // Ячейки с произведениями
+                for (let j = 1; j <= 10; j++) {
+                    const cell = document.createElement('td');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.dataset.value = i * j;
+                    cell.dataset.answered = 'false';
+                    cell.dataset.userAnswer = '';
+                    cell.dataset.revealed = 'true';
+                    cell.dataset.prefilled = 'false';
                     
-                    // Заголовок строки
-                    const rowHeader = document.createElement('td');
-                    rowHeader.className = 'header';
-                    rowHeader.textContent = i;
-                    row.appendChild(rowHeader);
-                    
-                    // Ячейки с произведениями
-                    for (let j = 1; j <= 10; j++) {
-                        const cell = document.createElement('td');
-                        cell.className = 'cell';
-                        cell.dataset.row = i;
-                        cell.dataset.col = j;
-                        cell.dataset.value = i * j;
-                        cell.dataset.answered = 'false';
-                        cell.dataset.userAnswer = '';
-                        cell.dataset.revealed = 'true';
-                        cell.dataset.prefilled = 'false';
-                        
-                        if (currentMode === 'study') {
-                            // В режиме изучения показываем всю таблицу
-                            cell.textContent = i * j;
-                            cell.classList.add('revealed');
-                        } else {
-                            // Режим тренировки - скрываем все ответы
-                            cell.textContent = '';
-                            cell.dataset.revealed = 'false';
-                        }
-                        
-                        cell.addEventListener('click', handleCellClick);
-                        cell.addEventListener('mouseenter', handleCellHover);
-                        cell.addEventListener('mouseleave', handleCellHoverOut);
-                        
-                        row.appendChild(cell);
-                        totalCells++;
+                    if (currentMode === 'study') {
+                        cell.textContent = i * j;
+                        cell.classList.add('revealed');
+                    } else {
+                        cell.textContent = '';
+                        cell.dataset.revealed = 'false';
                     }
                     
-                    table.appendChild(row);
+                    cell.addEventListener('click', handleCellClick);
+                    cell.addEventListener('mouseenter', handleCellHover);
+                    cell.addEventListener('mouseleave', handleCellHoverOut);
+                    
+                    // На мобильных устройствах добавляем обработчик долгого нажатия
+                    if ('ontouchstart' in window) {
+                        cell.addEventListener('touchstart', handleTouchStart, { passive: true });
+                    }
+                    
+                    row.appendChild(cell);
+                    totalCells++;
                 }
                 
-                // Для режима тренировки генерируем предзаполненные ячейки
-                if (currentMode === 'practice') {
-                    const fillRatios = {
-                        easy: 0.67,   // 2/3 заполнено
-                        medium: 0.33, // 1/3 заполнено
-                        hard: 0       // пустая таблица
-                    };
-                    generatePrefilledCells(fillRatios[currentDifficulty]);
-                }
-                
-                // Устанавливаем фокус на таблицу для работы клавиатуры
+                table.appendChild(row);
+            }
+            
+            // Для режима тренировки генерируем предзаполненные ячейки
+            if (currentMode === 'practice') {
+                const fillRatios = {
+                    easy: 0.67,
+                    medium: 0.33,
+                    hard: 0
+                };
+                generatePrefilledCells(fillRatios[currentDifficulty]);
+            }
+            
+            // На мобильных устройствах не фокусируемся на таблице
+            if (!isMobileDevice()) {
                 table.focus();
-                updateActiveCell();
-                updateProgress();
-                updateQuestionText();
-                updateVisibility();
             }
             
-            // Обновление активной ячейки
-            function updateActiveCell() {
-                // Убираем активный класс со всех ячеек
-                const allCells = table.querySelectorAll('.cell');
-                allCells.forEach(cell => {
-                    cell.classList.remove('active');
-                    cell.classList.remove('input-active');
-                });
-                
-                // Находим и выделяем активную ячейку
-                activeCell = table.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
-                if (activeCell) {
-                    if (userInput && currentMode === 'practice') {
-                        activeCell.classList.add('input-active');
-                    } else {
-                        activeCell.classList.add('active');
-                    }
-                    // ВСЕГДА подсвечиваем строку и столбец, независимо от состояния ячейки
-                    highlightRowAndColumn(currentRow, currentCol);
-                }
-            }
+            updateActiveCell();
+            updateProgress();
+            updateQuestionText();
+            updateVisibility();
+        }
+        
+        // Обновление активной ячейки
+        function updateActiveCell() {
+            const allCells = table.querySelectorAll('.cell');
+            allCells.forEach(cell => {
+                cell.classList.remove('active');
+                cell.classList.remove('input-active');
+            });
             
-            // Обновление текста вопроса
-            function updateQuestionText() {
-                if (currentMode === 'study') {
-                    if (isTableHidden) {
-                        questionText.textContent = 'Нажмите на ячейку, чтобы увидеть ответ';
-                    } else {
-                        questionText.textContent = 'Изучайте таблицу умножения';
-                    }
+            activeCell = table.querySelector(`td[data-row="${currentRow}"][data-col="${currentCol}"]`);
+            if (activeCell) {
+                if (userInput && currentMode === 'practice') {
+                    activeCell.classList.add('input-active');
                 } else {
-                    questionText.textContent = `Сколько будет ${currentRow} × ${currentCol}?`;
+                    activeCell.classList.add('active');
                 }
+                highlightRowAndColumn(currentRow, currentCol);
             }
-            
-            // Обновление текущего ввода
-            function updateCurrentInput() {
-                if (userInput) {
-                    currentInputEl.textContent = userInput;
-                    currentInputEl.style.borderColor = '#f59e0b';
+        }
+        
+        // Обновление текста вопроса
+        function updateQuestionText() {
+            if (currentMode === 'study') {
+                if (isTableHidden) {
+                    questionText.textContent = 'Нажмите на ячейку, чтобы увидеть ответ';
                 } else {
-                    currentInputEl.textContent = '?';
-                    currentInputEl.style.borderColor = '#e2e8f0';
+                    questionText.textContent = 'Изучайте таблицу умножения';
                 }
+            } else {
+                questionText.textContent = `Сколько будет ${currentRow} × ${currentCol}?`;
+            }
+        }
+        
+        // Обновление текущего ввода
+        function updateCurrentInput() {
+            if (userInput) {
+                currentInputEl.textContent = userInput;
+                currentInputEl.style.borderColor = '#f59e0b';
+            } else {
+                currentInputEl.textContent = '?';
+                currentInputEl.style.borderColor = '#e2e8f0';
+            }
+        }
+        
+        // Обновление прогресса
+        function updateProgress() {
+            let progress;
+            if (currentMode === 'study') {
+                progress = 0;
+            } else {
+                const answeredCells = table.querySelectorAll('.cell[data-answered="true"]').length;
+                const prefilledCells = table.querySelectorAll('.cell[data-prefilled="true"]').length;
+                const userAnswered = answeredCells - prefilledCells;
+                progress = Math.round((userAnswered / emptyCells) * 100);
+                completedCells = userAnswered;
             }
             
-            // Обновление прогресса
-            function updateProgress() {
-                let progress;
-                if (currentMode === 'study') {
-                    progress = 0;
-                } else {
-                    const answeredCells = table.querySelectorAll('.cell[data-answered="true"]').length;
-                    const prefilledCells = table.querySelectorAll('.cell[data-prefilled="true"]').length;
-                    const userAnswered = answeredCells - prefilledCells;
-                    progress = Math.round((userAnswered / emptyCells) * 100);
-                    completedCells = userAnswered;
-                }
-                
-                progressPercentEl.textContent = `${progress}%`;
-                progressFillEl.style.width = `${progress}%`;
-                
-                // Проверяем завершение
-                if (currentMode === 'practice' && progress >= 100 && !isCompleted) {
-                    showCompletionMessage();
-                }
+            progressPercentEl.textContent = `${progress}%`;
+            progressFillEl.style.width = `${progress}%`;
+            
+            if (currentMode === 'practice' && progress >= 100 && !isCompleted) {
+                showCompletionMessage();
+            }
+        }
+        
+        // Обработчик клика по ячейке
+        function handleCellClick(event) {
+            const cell = event.target;
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            
+            setActiveCell(row, col);
+            
+            if (currentMode === 'study' && isTableHidden) {
+                cell.textContent = row * col;
+                cell.classList.add('revealed');
+                cell.dataset.revealed = 'true';
+                return;
             }
             
-            // Обработчик клика по ячейке
-            function handleCellClick(event) {
+            // На мобильных устройствах в режиме тренировки фокусируемся на поле ввода
+            if (currentMode === 'practice' && isMobileDevice()) {
+                mobileInput.focus();
+            }
+        }
+        
+        // Обработчик касания для мобильных устройств
+        function handleTouchStart(event) {
+            if (currentMode === 'practice') {
                 const cell = event.target;
                 const row = parseInt(cell.dataset.row);
                 const col = parseInt(cell.dataset.col);
                 
-                // Устанавливаем активную ячейку (автоматически проверяет предыдущий ввод в режиме тренировки)
                 setActiveCell(row, col);
                 
-                // В режиме изучения при скрытой таблице - открываем ячейку
+                // Фокусируемся на поле ввода после короткой задержки
+                setTimeout(() => {
+                    mobileInput.focus();
+                }, 100);
+            }
+        }
+        
+        // Обработчик наведения на ячейку
+        function handleCellHover(event) {
+            const cell = event.target;
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            
+            highlightRowAndColumn(row, col);
+        }
+        
+        // Обработчик ухода мыши с ячейки
+        function handleCellHoverOut() {
+            if (!activeCell) {
+                removeHighlights();
+            }
+        }
+        
+        // Подсветка строки и столбца
+        function highlightRowAndColumn(row, col) {
+            removeHighlights();
+            
+            const rows = table.querySelectorAll('tr');
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].querySelectorAll('td');
+                if (cells[col]) {
+                    cells[col].classList.add('highlight-row');
+                }
+            }
+            
+            for (let i = 1; i <= 10; i++) {
+                const cell = table.querySelector(`td[data-row="${row}"][data-col="${i}"]`);
+                if (cell) cell.classList.add('highlight-col');
+            }
+        }
+        
+        // Удаление подсветки
+        function removeHighlights() {
+            const highlightedCells = table.querySelectorAll('.highlight-row, .highlight-col');
+            highlightedCells.forEach(cell => {
+                cell.classList.remove('highlight-row');
+                cell.classList.remove('highlight-col');
+            });
+        }
+        
+        // Обработка нажатий клавиш
+        function handleKeyDown(event) {
+            if (isCompleted) return;
+            
+            if (event.key === 'Enter') {
+                event.preventDefault();
                 if (currentMode === 'study' && isTableHidden) {
-                    cell.textContent = row * col;
-                    cell.classList.add('revealed');
-                    cell.dataset.revealed = 'true';
+                    revealCell();
                     return;
                 }
             }
             
-            // Обработчик наведения на ячейку
-            function handleCellHover(event) {
-                const cell = event.target;
-                const row = parseInt(cell.dataset.row);
-                const col = parseInt(cell.dataset.col);
-                
-                highlightRowAndColumn(row, col);
-            }
-            
-            // Обработчик ухода мыши с ячейки
-            function handleCellHoverOut() {
-                // Не убираем подсветку, если есть активная ячейка
-                if (!activeCell) {
-                    removeHighlights();
-                }
-            }
-            
-            // Подсветка строки и столбца
-            function highlightRowAndColumn(row, col) {
-                removeHighlights();
-                
-                // Подсветка строки
-                const rows = table.querySelectorAll('tr');
-                for (let i = 1; i < rows.length; i++) {
-                    const cells = rows[i].querySelectorAll('td');
-                    if (cells[col]) {
-                        cells[col].classList.add('highlight-row');
-                    }
-                }
-                
-                // Подсветка столбца
-                for (let i = 1; i <= 10; i++) {
-                    const cell = table.querySelector(`td[data-row="${row}"][data-col="${i}"]`);
-                    if (cell) cell.classList.add('highlight-col');
-                }
-            }
-            
-            // Удаление подсветки
-            function removeHighlights() {
-                const highlightedCells = table.querySelectorAll('.highlight-row, .highlight-col');
-                highlightedCells.forEach(cell => {
-                    cell.classList.remove('highlight-row');
-                    cell.classList.remove('highlight-col');
-                });
-            }
-            
-            // Обработка нажатий клавиш
-            function handleKeyDown(event) {
-                if (isCompleted) return;
-                
-                // Обработка Enter для открытия ячеек в режиме изучения
-                if (event.key === 'Enter') {
+            if (currentMode === 'practice') {
+                if (event.key >= '0' && event.key <= '9') {
                     event.preventDefault();
-                    if (currentMode === 'study' && isTableHidden) {
-                        revealCell();
-                        return;
-                    }
-                }
-                
-                if (currentMode === 'practice') {
-                    // Обработка цифрового ввода
-                    if (event.key >= '0' && event.key <= '9') {
-                        event.preventDefault();
-                        
-                        // Запускаем таймер при первом вводе
-                        if (!isTimerRunning && userInput === '') {
-                            startTimer();
-                        }
-                        
-                        userInput += event.key;
-                        // Разрешаем ввод до 3 цифр (для чисел 100)
-                        if (userInput.length > 3) {
-                            userInput = userInput.slice(0, 3);
-                        }
-                        
-                        // Сохраняем ввод пользователя в данные ячейки
-                        if (activeCell && activeCell.dataset.prefilled !== 'true') {
-                            activeCell.dataset.userAnswer = userInput;
-                            activeCell.textContent = userInput;
-                            activeCell.classList.add('user-input');
-                        }
-                        
-                        updateCurrentInput();
-                        updateActiveCell();
-                        
-                        // Сбрасываем предыдущий таймаут
-                        if (inputTimeout) {
-                            clearTimeout(inputTimeout);
-                        }
-                        
-                        // Устанавливаем таймаут для автоматической проверки
-                        inputTimeout = setTimeout(() => {
-                            if (userInput) {
-                                checkAnswer();
-                            }
-                        }, 2000);
-                        
-                        return;
+                    
+                    if (!isTimerRunning && userInput === '') {
+                        startTimer();
                     }
                     
-                    // Обработка Backspace
-                    if (event.key === 'Backspace') {
-                        event.preventDefault();
-                        userInput = userInput.slice(0, -1);
-                        if (activeCell && activeCell.dataset.prefilled !== 'true') {
-                            activeCell.dataset.userAnswer = userInput;
-                            activeCell.textContent = userInput || '';
-                            if (!userInput) {
-                                activeCell.classList.remove('user-input');
-                            }
-                        }
-                        updateCurrentInput();
-                        updateActiveCell();
-                        return;
+                    userInput += event.key;
+                    if (userInput.length > 3) {
+                        userInput = userInput.slice(0, 3);
                     }
+                    
+                    if (activeCell && activeCell.dataset.prefilled !== 'true') {
+                        activeCell.dataset.userAnswer = userInput;
+                        activeCell.textContent = userInput;
+                        activeCell.classList.add('user-input');
+                    }
+                    
+                    updateCurrentInput();
+                    updateActiveCell();
+                    
+                    if (inputTimeout) {
+                        clearTimeout(inputTimeout);
+                    }
+                    
+                    inputTimeout = setTimeout(() => {
+                        if (userInput) {
+                            checkAnswer();
+                        }
+                    }, 2000);
+                    
+                    return;
                 }
                 
-                // Обработка навигации
-                switch(event.key) {
-                    case 'ArrowUp':
-                        event.preventDefault();
-                        if (currentMode === 'practice' && userInput) {
-                            checkAnswer();
+                if (event.key === 'Backspace') {
+                    event.preventDefault();
+                    userInput = userInput.slice(0, -1);
+                    if (activeCell && activeCell.dataset.prefilled !== 'true') {
+                        activeCell.dataset.userAnswer = userInput;
+                        activeCell.textContent = userInput || '';
+                        if (!userInput) {
+                            activeCell.classList.remove('user-input');
                         }
-                        if (currentRow > 1) {
-                            setActiveCell(currentRow - 1, currentCol);
-                        }
-                        break;
-                    case 'ArrowDown':
-                        event.preventDefault();
-                        if (currentMode === 'practice' && userInput) {
-                            checkAnswer();
-                        }
-                        if (currentRow < 10) {
-                            setActiveCell(currentRow + 1, currentCol);
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        event.preventDefault();
-                        if (currentMode === 'practice' && userInput) {
-                            checkAnswer();
-                        }
-                        if (currentCol > 1) {
-                            setActiveCell(currentRow, currentCol - 1);
-                        }
-                        break;
-                    case 'ArrowRight':
-                        event.preventDefault();
-                        if (currentMode === 'practice' && userInput) {
-                            checkAnswer();
-                        }
-                        if (currentCol < 10) {
-                            setActiveCell(currentRow, currentCol + 1);
-                        }
-                        break;
+                    }
+                    updateCurrentInput();
+                    updateActiveCell();
+                    return;
                 }
             }
             
-            // Проверка ответа
-            function checkAnswer() {
-                if (!userInput || !activeCell || activeCell.dataset.prefilled === 'true') return;
-                
-                // Сбрасываем таймаут
-                if (inputTimeout) {
-                    clearTimeout(inputTimeout);
-                    inputTimeout = null;
-                }
-                
-                const correctAnswer = parseInt(activeCell.dataset.value);
-                const userAnswer = parseInt(userInput);
-                
-                // Проверяем ответ
-                if (userAnswer === correctAnswer) {
-                    // Правильный ответ
-                    activeCell.classList.remove('user-input', 'incorrect');
-                    activeCell.classList.add('correct');
-                    activeCell.dataset.answered = 'true';
-                    
-                    // Обновляем счетчики только если это новый правильный ответ
-                    if (!activeCell.classList.contains('correct-old')) {
-                        correctCount++;
-                        activeCell.classList.add('correct-old');
+            switch(event.key) {
+                case 'ArrowUp':
+                    event.preventDefault();
+                    if (currentMode === 'practice' && userInput) {
+                        checkAnswer();
                     }
-                    
-                    correctCountEl.textContent = correctCount;
+                    if (currentRow > 1) {
+                        setActiveCell(currentRow - 1, currentCol);
+                    }
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    if (currentMode === 'practice' && userInput) {
+                        checkAnswer();
+                    }
+                    if (currentRow < 10) {
+                        setActiveCell(currentRow + 1, currentCol);
+                    }
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    if (currentMode === 'practice' && userInput) {
+                        checkAnswer();
+                    }
+                    if (currentCol > 1) {
+                        setActiveCell(currentRow, currentCol - 1);
+                    }
+                    break;
+                case 'ArrowRight':
+                    event.preventDefault();
+                    if (currentMode === 'practice' && userInput) {
+                        checkAnswer();
+                    }
+                    if (currentCol < 10) {
+                        setActiveCell(currentRow, currentCol + 1);
+                    }
+                    break;
+            }
+        }
+        
+        // Обработка ввода с мобильной клавиатуры
+        function handleMobileInput(event) {
+            if (currentMode !== 'practice' || !activeCell) return;
+            
+            const value = event.target.value;
+            
+            // Фильтруем только цифры
+            const numericValue = value.replace(/[^0-9]/g, '');
+            event.target.value = numericValue;
+            
+            userInput = numericValue.slice(0, 3); // Ограничиваем до 3 цифр
+            
+            if (activeCell && activeCell.dataset.prefilled !== 'true') {
+                activeCell.dataset.userAnswer = userInput;
+                activeCell.textContent = userInput;
+                if (userInput) {
+                    activeCell.classList.add('user-input');
                 } else {
-                    // Неправильный ответ
-                    activeCell.classList.remove('user-input', 'correct');
-                    activeCell.classList.add('incorrect');
-                    activeCell.dataset.answered = 'true';
-                    
-                    // Обновляем счетчики только если это новая ошибка
-                    if (!activeCell.classList.contains('incorrect-old')) {
-                        incorrectCount++;
-                        activeCell.classList.add('incorrect-old');
-                    }
-                    
-                    incorrectCountEl.textContent = incorrectCount;
-                }
-                
-                userInput = '';
-                updateCurrentInput();
-                updateProgress();
-                
-                // После проверки ответа ВСЕГДА обновляем подсветку
-                updateActiveCell();
-            }
-            
-            // Таймер
-            function startTimer() {
-                if (isTimerRunning) return;
-                
-                isTimerRunning = true;
-                timerInterval = setInterval(() => {
-                    timerSeconds++;
-                    updateTimerDisplay();
-                }, 1000);
-            }
-            
-            function stopTimer() {
-                isTimerRunning = false;
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
+                    activeCell.classList.remove('user-input');
                 }
             }
             
-            function resetTimer() {
-                stopTimer();
-                timerSeconds = 0;
+            updateCurrentInput();
+            updateActiveCell();
+            
+            // Запускаем таймер при первом вводе
+            if (!isTimerRunning && userInput) {
+                startTimer();
+            }
+            
+            // Автопроверка после ввода
+            if (inputTimeout) {
+                clearTimeout(inputTimeout);
+            }
+            
+            inputTimeout = setTimeout(() => {
+                if (userInput) {
+                    checkAnswer();
+                    mobileInput.value = ''; // Очищаем поле ввода после проверки
+                }
+            }, 1500);
+        }
+        
+        // Проверка ответа
+        function checkAnswer() {
+            if (!userInput || !activeCell || activeCell.dataset.prefilled === 'true') return;
+            
+            if (inputTimeout) {
+                clearTimeout(inputTimeout);
+                inputTimeout = null;
+            }
+            
+            const correctAnswer = parseInt(activeCell.dataset.value);
+            const userAnswer = parseInt(userInput);
+            
+            if (userAnswer === correctAnswer) {
+                activeCell.classList.remove('user-input', 'incorrect');
+                activeCell.classList.add('correct');
+                activeCell.dataset.answered = 'true';
+                
+                if (!activeCell.classList.contains('correct-old')) {
+                    correctCount++;
+                    activeCell.classList.add('correct-old');
+                }
+                
+                correctCountEl.textContent = correctCount;
+            } else {
+                activeCell.classList.remove('user-input', 'correct');
+                activeCell.classList.add('incorrect');
+                activeCell.dataset.answered = 'true';
+                
+                if (!activeCell.classList.contains('incorrect-old')) {
+                    incorrectCount++;
+                    activeCell.classList.add('incorrect-old');
+                }
+                
+                incorrectCountEl.textContent = incorrectCount;
+            }
+            
+            userInput = '';
+            mobileInput.value = ''; // Очищаем мобильное поле ввода
+            updateCurrentInput();
+            updateProgress();
+            updateActiveCell();
+        }
+        
+        // Таймер
+        function startTimer() {
+            if (isTimerRunning) return;
+            
+            isTimerRunning = true;
+            timerInterval = setInterval(() => {
+                timerSeconds++;
                 updateTimerDisplay();
-                
-                // Сбрасываем прогресс
-                correctCount = 0;
-                incorrectCount = 0;
-                completedCells = 0;
-                correctCountEl.textContent = '0';
-                incorrectCountEl.textContent = '0';
-                updateProgress();
-                
-                initTable();
+            }, 1000);
+        }
+        
+        function stopTimer() {
+            isTimerRunning = false;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
             }
+        }
+        
+        function resetTimer() {
+            stopTimer();
+            timerSeconds = 0;
+            updateTimerDisplay();
             
-            function updateTimerDisplay() {
-                const minutes = Math.floor(timerSeconds / 60);
-                const seconds = timerSeconds % 60;
-                timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
+            correctCount = 0;
+            incorrectCount = 0;
+            completedCells = 0;
+            correctCountEl.textContent = '0';
+            incorrectCountEl.textContent = '0';
+            updateProgress();
             
-            // Обработчики событий
-            studyModeBtn.addEventListener('click', function() {
-                currentMode = 'study';
-                studyModeBtn.classList.add('active');
-                practiceModeBtn.classList.remove('active');
-                userInput = '';
-                updateCurrentInput();
-                updateQuestionText();
-                isTableHidden = false;
-                initTable();
-            });
-            
-            practiceModeBtn.addEventListener('click', function() {
-                currentMode = 'practice';
-                practiceModeBtn.classList.add('active');
-                studyModeBtn.classList.remove('active');
-                userInput = '';
-                updateCurrentInput();
-                updateQuestionText();
-                initTable();
-            });
-            
-            difficultyEasyBtn.addEventListener('click', function() {
-                currentDifficulty = 'easy';
-                difficultyEasyBtn.classList.add('active');
-                difficultyMediumBtn.classList.remove('active');
-                difficultyHardBtn.classList.remove('active');
-                initTable();
-            });
-            
-            difficultyMediumBtn.addEventListener('click', function() {
-                currentDifficulty = 'medium';
-                difficultyMediumBtn.classList.add('active');
-                difficultyEasyBtn.classList.remove('active');
-                difficultyHardBtn.classList.remove('active');
-                initTable();
-            });
-            
-            difficultyHardBtn.addEventListener('click', function() {
-                currentDifficulty = 'hard';
-                difficultyHardBtn.classList.add('active');
-                difficultyEasyBtn.classList.remove('active');
-                difficultyMediumBtn.classList.remove('active');
-                initTable();
-            });
-            
-            hideTableBtn.addEventListener('click', function() {
-                isTableHidden = true;
-                updateTableVisibility();
-            });
-            
-            showTableBtn.addEventListener('click', function() {
-                isTableHidden = false;
-                updateTableVisibility();
-            });
-            
-            resetTimerBtn.addEventListener('click', resetTimer);
-            
-            table.addEventListener('keydown', handleKeyDown);
-            
-            // Инициализация при загрузке
+            initTable();
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Обработчики событий
+        studyModeBtn.addEventListener('click', function() {
+            currentMode = 'study';
+            studyModeBtn.classList.add('active');
+            practiceModeBtn.classList.remove('active');
+            userInput = '';
+            updateCurrentInput();
+            updateQuestionText();
+            isTableHidden = false;
             initTable();
         });
+        
+        practiceModeBtn.addEventListener('click', function() {
+            currentMode = 'practice';
+            practiceModeBtn.classList.add('active');
+            studyModeBtn.classList.remove('active');
+            userInput = '';
+            updateCurrentInput();
+            updateQuestionText();
+            initTable();
+        });
+        
+        difficultyEasyBtn.addEventListener('click', function() {
+            currentDifficulty = 'easy';
+            difficultyEasyBtn.classList.add('active');
+            difficultyMediumBtn.classList.remove('active');
+            difficultyHardBtn.classList.remove('active');
+            initTable();
+        });
+        
+        difficultyMediumBtn.addEventListener('click', function() {
+            currentDifficulty = 'medium';
+            difficultyMediumBtn.classList.add('active');
+            difficultyEasyBtn.classList.remove('active');
+            difficultyHardBtn.classList.remove('active');
+            initTable();
+        });
+        
+        difficultyHardBtn.addEventListener('click', function() {
+            currentDifficulty = 'hard';
+            difficultyHardBtn.classList.add('active');
+            difficultyEasyBtn.classList.remove('active');
+            difficultyMediumBtn.classList.remove('active');
+            initTable();
+        });
+        
+        hideTableBtn.addEventListener('click', function() {
+            isTableHidden = true;
+            updateTableVisibility();
+        });
+        
+        showTableBtn.addEventListener('click', function() {
+            isTableHidden = false;
+            updateTableVisibility();
+        });
+        
+        resetTimerBtn.addEventListener('click', resetTimer);
+        
+        // Обработчики для мобильного ввода
+        mobileInput.addEventListener('input', handleMobileInput);
+        mobileInput.addEventListener('blur', function() {
+            // При потере фокуса проверяем ответ
+            if (userInput) {
+                setTimeout(() => {
+                    checkAnswer();
+                }, 500);
+            }
+        });
+        
+        // Обработчик клика по текущему вводу на мобильных устройствах
+        currentInputEl.addEventListener('click', function() {
+            if (currentMode === 'practice' && isMobileDevice()) {
+                mobileInput.focus();
+            }
+        });
+        
+        table.addEventListener('keydown', handleKeyDown);
+        
+        // Инициализация при загрузке
+        initTable();
+    });
     </script>
 </body>
 </html>
